@@ -1,0 +1,43 @@
+INSTALL for rb52odim
+
+Daniel Michelson and Peter Rodriguez
+Environment and Climate Change Canada
+
+This software works with Python 2.6.x and 2.7.x, together with a RAVE 
+installation.
+RAVE and its packages are found at git.baltrad.eu. 
+
+(As RAVE is currently migrating to Python 3, this package will follow in due 
+course.)
+
+Set Makefile dependencies depending on how your RAVE was built. This deals 
+specifically with your $RAVEROOT, $PATH, and $LD_LIBRARY_PATH environment 
+variables. These can be collected into a file that can be sourced, especially 
+if used by others. For example,
+$ source /opt/baltrad/etc/env.rc
+
+Then it should just be a simply matter of make ; make test ; make install
+
+Long version:
+
+Build the C library
+-------------------
+cd src
+make
+cd ..
+
+Build the Python C shared module
+--------------------------------
+cd modules
+make
+cd ..
+
+Test
+----
+make test
+If all tests pass, then you are ready to install
+
+Install
+-------
+make install
+This will install these extensions to wherever RAVE is installed.

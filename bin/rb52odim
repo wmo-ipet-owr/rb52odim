@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+'''
+Copyright (C) 2017 The Crown (i.e. Her Majesty the Queen in Right of Canada)
+
+This file is an add-on to RAVE.
+
+RAVE is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+RAVE and this software are distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
+
+'''
+## Command-line utility for decoding and merging Rainbow 5 data to ODIM_H5
+# 
+
+
+## 
+# @file
+# @author Daniel Michelson and Peter Rodriguez, Environment and Climate Change Canada
+# @date 2017-06-14
+
+import sys, os, tarfile, errno
+import rb52odim
+
+
+if __name__=="__main__":
+    from optparse import OptionParser
+
+    usage = "usage: %prog -i <input file or files> -o <output ODIM_H5 file> [-b <output base directory name>] [h]"
+    parser = OptionParser(usage=usage)
+
+    parser.add_option("-i", "--input", dest="inputs",
+                      help="Single input Rainbow 5 file name, or sequence of comma-separated input Rainbow 5 file names. No white spaces allowed.")
+
+    parser.add_option("-o", "--output", dest="ofile",
+                      help="Output ODIM_H5 file name.")
+
+    parser.add_option("-I", "--interval", dest="interval", 
+                      type="int", default=5,
+                      help="The data acquisition cycle, in minutes, assuming it is regular and starts with minute 0. Defaults to 5.")
+
+    parser.add_option("-t", "--task", dest="task", default="Rainbow 5",
+                      help='Data acquisition task name. Defaults to "Rainbow 5".')
+
+    parser.add_option("-b", "--basedir", dest="basedir",
+                      help="Name of the output base directory. For optional use with tarball input.")
+
+    (options, args) = parser.parse_args()
+
+    if not options.inputs or not options.ofile:
+        parser.print_help()
+        sys.exit(errno.EINVAL)        
+
+    ifiles = options.inputs.split(",")
+    if len(ifiles) == 1:
+
+        if not tarfile.is_tarfile(options.inputs):
+            # Single untarred RB5 file to single-variable ODIM_H5
+            rb52odim.singleRB5(options.inputs, options.ofile)
+
+        else:
+            # Single RB5 tarball file to muli-variable ODIM_H5
+            rb52odim.combineRB5FromTarball(options.inputs, options.ofile, options.basedir)
+
+    else:
+        if not tarfile.is_tarfile(ifiles[0]):
+            # Multiple untarred RB5 files to multi-variable ODIM_H5
+            rb52odim.combineRB5(ifiles, options.ofile)
+
+        else:
+            # Multiple RB5 scan tarballs to ODIM_H5 PVOL. Assumes that input 
+            # tarballs do not contain single-moment scans or volumes.
+            rb52odim.combineRB5Tarballs2Pvol(ifiles, options.ofile, 
+                                             False, 
+                                             options.interval, options.task)

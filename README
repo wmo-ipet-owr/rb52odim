@@ -1,0 +1,25 @@
+README for rb52odim
+
+Daniel Michelson and Peter Rodriguez
+Environment and Climate Change Canada
+
+
+This is an add-on package for weather radar data processing with the BALTRAD 
+Toolbox, a k a RAVE.
+
+rb52odim provides functionality for reading SELEX Rainbow 5 sweep (azi) and 
+volume (vol) files, merging variables (moments) from different files into a
+single PolarScanCore or PolarVolumeCore object for processing, and writing the 
+results to ODIM_H5.
+
+rb52odim supports the reading of extended metadata in Rainbow 5 files.
+
+RAVE and its packages can be found at git.baltrad.eu.
+
+This project is structured similarly to RAVE. Although this is a small project,
+ie. there may be few files in each directory, the structure is used anyway for 
+consistency and to to serve as a template for other add-ons.
+
+rb52odim will install to the same directories as your RAVE installation.
+
+Installation instructions are found in the INSTALL file.
