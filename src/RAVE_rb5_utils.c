@@ -564,7 +564,7 @@ strURPDATA what_is_this_param_to_urp(char *sparam){
             strcpy(urp.unit,"");
             strcpy(urp.desc,"Correlation Coefficient");
         } else if (strcmp(sparam, "uPhiDP") == 0 ){
-                   urp.type=16;
+		   urp.type=216; //New URP decree 2017-Sep-12; was urp.type=16
             strcpy(urp.name,"UPHIDP");
             strcpy(urp.unit,"deg");
             strcpy(urp.desc,"Uncorrected Differential Phase");
@@ -707,19 +707,34 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
     }
     rb5_info->xpathCtx=xpathCtx;
 
+    char xpath[MAX_STRING]="\0";
+    char xpath_bgn[MAX_STRING]="\0";
+
     char stmpa[MAX_STRING]="\0";
     strcpy(stmpa,rb5_info->inp_fullfile);
     strcpy(rb5_info->inp_file_basename,basename(stmpa));
     strcpy(stmpa,rb5_info->inp_fullfile);
     strcpy(rb5_info->inp_file_dirname , dirname(stmpa));
-    static char inp_file_data_type[MAX_STRING]="\0";
-    char *lastdot=strrchr(rb5_info->inp_file_basename,'.');
-    int dot_position=lastdot-rb5_info->inp_file_basename;
-    int ext_length=strlen(rb5_info->inp_file_basename)-dot_position;
-    int typ_length=strlen(rb5_info->inp_file_basename)-16-ext_length;
-    strncpy(inp_file_data_type,(rb5_info->inp_file_basename)+16,typ_length);
-    strncpy(rb5_info->inp_file_data_type,inp_file_data_type,typ_length);
-    rb5_info->inp_file_data_type[typ_length]='\0'; //add NULL terminator
+
+    //determine data type by file contents
+    sprintf(xpath_bgn,"(/volume/scan/slice)[1]/slicedata/rawdata");
+    int this_n_rawdatas=get_xpath_size(xpathCtx,xpath_bgn);
+    if(this_n_rawdatas == 0){
+        int rawdatapacked_exists=get_xpath_size(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"packed"));
+        if(rawdatapacked_exists == 0) {
+            strcpy(rb5_info->inp_file_data_type,"UNKNOWN");
+        } else {
+            strcpy(rb5_info->inp_file_data_type,"BBP");
+        }
+        fprintf(stderr,"Error: Decode cannot handle inp_file_data_type = %s\n",rb5_info->inp_file_data_type);
+        close_rb5_info(&(*rb5_info));
+        return(EXIT_FAILURE);
+    } else if (this_n_rawdatas == 1){
+        strcpy(rb5_info->inp_file_data_type,return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/@type")));
+    } else {
+        strcpy(rb5_info->inp_file_data_type,"ALL");
+    }
+
     if(L_VERBOSE){
         fprintf(stdout,"%s = %s\n", "rb5_info->inp_file_dirname", rb5_info->inp_file_dirname);
         fprintf(stdout,"%s = %s\n", "rb5_info->inp_file_basename", rb5_info->inp_file_basename);
@@ -727,9 +742,6 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
     }
 
     strRB5_PARAM_INFO rb5_param;
-
-    char xpath[MAX_STRING]="\0";
-    char xpath_bgn[MAX_STRING]="\0";
 
     strcpy(rb5_info->rainbow_version,return_xpath_value(xpathCtx,"/volume/@version"));
     if(strcmp(rb5_info->rainbow_version,MINIMUM_RAINBOW_VERSION) < 0){
