@@ -38,6 +38,8 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 #include "rave_alloc.h"
 #include "time_utils.h"
 #include "rb5_utils.h"
+#include "xml_utils.h"
+
 #include <ctype.h> //for tolower() & isalnum()
 #include <sys/stat.h> //stat()
 
@@ -59,8 +61,6 @@ int addLongAttribute(RaveCoreObject* object, const char* name, long value);
 int addDoubleAttribute(RaveCoreObject* object, const char* name, double value);
 int addStringAttribute(RaveCoreObject* object, const char* name, const char* value);
 int addAttribute(RaveCoreObject* object, RaveAttribute_t* attr);
-char* mapSource2Nod(const char* key);
-char* mapSource2Model(const char* key);
 /* END HELPER FUNCTIONS */
 
 //################################################################################

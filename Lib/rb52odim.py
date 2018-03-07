@@ -26,9 +26,17 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 # @author Daniel Michelson and Peter Rodriquez, Environment and Climate Change Canada
 # @date 2017-06-14
 
-import sys, os, math, tarfile
+import sys, os, math, tarfile, mimetypes, gzip, datetime
 import _rb52odim
-import _rave, _raveio, _polarvolume
+import _rave, _raveio, _polarvolume, _polarscan
+import rave_tempfile
+from copy import copy
+
+## Define $RAVECONFIG relative to this module
+RB52ODIMCONFIG = os.path.abspath(os.path.join(os.path.dirname(_rb52odim.__file__),'..','config'))
+os.environ["RB52ODIMCONFIG"] = RB52ODIMCONFIG
+
+ACQUISITION_UPDATE_TIME = 6  # minutes
 
 
 ## Rudimentary input file validation
@@ -40,15 +48,48 @@ def validate(filename):
         raise IOError, "%s is zero-length. Bailing ..." % filename
 
 
+## Gunzips a (Rainbow5) file
+# @param string input file name, assumed to have trailing .gz
+# @returns string output file name, created by rave_tempfile
+def gunzip(fstr):
+    payload = gzip.open(fstr).read()
+    fstr = rave_tempfile.mktemp(close='True')[1]
+    fd = open(fstr, 'w')
+    fd.write(payload)
+    fd.close()
+    return fstr
+
+
+## Rounds date and time to the nearest acquisition interval (minute past hour),
+# assuming it is regular and starting at minute 0.
+# @param string date in YYYYMMDD format
+# @param string time in HHmmSS format
+# @param int update interval in minutes
+# @returns tuple containing date and time in the same format as input arguments
+def roundDT(DATE, TIME, INTERVAL=ACQUISITION_UPDATE_TIME):
+    HINTERVAL = INTERVAL / 2.0
+    tm = datetime.datetime(int(DATE[:4]), int(DATE[4:6]), int(DATE[6:8]),
+                           int(TIME[:2]), int(TIME[2:4]), int(TIME[4:]))
+    tm += datetime.timedelta(minutes=HINTERVAL)
+    tm -= datetime.timedelta(minutes=tm.minute % INTERVAL,
+                             seconds=tm.second,microseconds=tm.microsecond)
+    return tm.strftime('%Y%m%d'), tm.strftime('%H%M%S')
+
+
 ## Reads RB5 files and merges their contents into an output ODIM_H5 file
 # @param string file name of input file
 # @param string file name of output file
 def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
+    TMPFILE = False
     validate(inp_fullfile)
+    orig_ifile = copy(inp_fullfile)
+    if mimetypes.guess_type(inp_fullfile)[1] == 'gzip':
+        inp_fullfile = gunzip(inp_fullfile)
+        TMPFILE = True
     if not _rb52odim.isRainbow5(inp_fullfile):
-        raise IOError, "%s is not a proper RB5 raw file" % inp_fullfile
-    else:
-        rio=_rb52odim.readRB5(inp_fullfile)
+        raise IOError, "%s is not a proper RB5 raw file" % orig_ifile
+    rio = _rb52odim.readRB5(inp_fullfile)
+    if TMPFILE: os.remove(inp_fullfile)
 
     if out_fullfile:
         rio.save(out_fullfile)
@@ -56,11 +97,153 @@ def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
         return rio
 
 
+### Functions that do not assume tarballing. Somewhat redundant functionality
+### for merging parameters/quantities from individual files/objects.
+
+## Takes individual scan or volume files, each containing only one parameter, 
+#  reads then, and appends them to a list. Input files are sorted case-
+#  insensitively, so that parameters are (always) ordered consistently in the 
+#  output ODIM_H5 files, not that it makes a difference.
+# @param list of input file strings
+# @returns list containing PolarScanCore objects
+def readParameterFiles(ifiles):
+    ifiles = sorted(ifiles, key=lambda s: s.lower())  # case-insensitive sort
+    objects = []
+    for ifile in ifiles:
+        try: rio = singleRB5(ifile, return_rio=True)
+        except: print "readParameterFiles: failed to read %s" % ifile
+        objects.append(rio.object)
+    return objects
+
+
+## Takes individual scan objects, each containing only one parameter, and 
+#  compiles them into a single scan with all parameters.
+# @param list of PolarScanCore objects
+# @returns PolarScanCore object containing all parameters and metadata
+def compileScanParameters(scans):
+    # Clone the first scan to act as host for the others
+    oscan = scans[0].clone()
+    
+    for i in range(1, len(scans)):
+        scan = scans[i]
+        for pname in scan.getParameterNames():  # should only be one
+            if pname not in oscan.getParameterNames(): # should not be necessary
+                param = scan.getParameter(pname)
+                oscan.addParameter(param)
+
+        # Check whether there are any additional attributes in a given scan
+        # and add them to the output scan. No checking whether replicate
+        # attributes contain the same information.
+        anames = oscan.getAttributeNames()
+        for aname in scan.getAttributeNames():
+            if aname not in anames:
+                oscan.addAttribute(aname, scan.getAttribute(aname))
+            
+    return oscan
+
+
+## Compiles a multi-parameter volume from several single-parameter volumes.
+#  ASSUMES that the input files are all from the same data acquisition, that
+#  the scan strategies are identical, so no advanced validation is required.
+#  This function is deliberately structured to pair with 
+#  \ref compileScanParameters
+# @param list of input PolarVolumeCore objects
+# @return PolarVolumeCore object
+def compileVolumeFromVolumes(volumes, adjustTime=True):
+    # Use the first volume to act as host for the others. Start by removing its 
+    # scans but preserving its top-level metadata attributes
+    ovolume = volumes[0].clone()  # If we don't clone, we mess up the original
+    nscans = ovolume.getNumberOfScans()
+    while 1:
+        try: ovolume.removeScan(0)
+        except: break
+
+    # Second iteration, pull out scans, merge their parameters, and add the 
+    # multi-parameter scan to the output volume
+    for i in range(nscans):
+        scans = []
+        for volume in volumes:
+            scans.append(volume.getScan(i))
+        oscan = compileScanParameters(scans)
+        ovolume.addScan(oscan)
+
+    # Last loop, check whether there are any additional attributes at the top
+    # level in any of the input volumes. No checking whether replicate 
+    # attributes contain the same information.
+    anames = ovolume.getAttributeNames()
+    for volume in volumes:
+        for aname in volume.getAttributeNames():
+            if aname not in anames:
+                ovolume.addAttribute(aname, volume.getAttribute(aname))
+
+    # Adjust to closest nomimal time
+    if adjustTime:
+        if ovolume.isAscendingScans():
+            ovolume.date, ovolume.time  = roundDT(ovolume.date, ovolume.time)
+        else:
+            lowest = ovolume.getScanClosestToElevation(-90.0, 0)
+            ovolume.date, ovolume.time  = roundDT(lowest.enddate, lowest.endtime)
+
+    return ovolume
+
+
+## Generates a volume from scans, based on rave_pgf_volume_plugin.generateVolume
+# @param list of input PolarScanCore objects
+# @return PolarVolumeCore object
+def compileVolumeFromScans(scans, adjustTime=True):
+    if len(scans) <= 0:
+        raise AttributeError, "Volume must consist of at least 1 scan"
+
+    firstscan=False  
+    volume = _polarvolume.new()
+
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source'
+
+    for scan in scans:
+        if firstscan == False:
+            firstscan = True
+            volume.longitude = scan.longitude
+            volume.latitude = scan.latitude
+            volume.height = scan.height
+            volume.beamwidth = scan.beamwidth
+        volume.addScan(scan)
+
+    volume.source = scan.source  # Recycle the last input, it won't necessarily be correct ...
+    odim_source.CheckSource(volume)    # ... so check it!
+ 
+    # Adjust to closest nomimal time
+    if adjustTime:
+        if volume.isAscendingScans():
+            volume.date, volume.time  = roundDT(volume.date, volume.time)
+        else:
+            lowest = volume.getScanClosestToElevation(-90.0, 0)
+            volume.date, volume.time  = roundDT(lowest.enddate, lowest.endtime)
+    return volume
+
+
+## High-level function for reading multiple input data files and merging them
+#  into either a scan or volume. The first object in the list will be read and
+#  its object type queried. This will determine whether the object being merged
+#  is a scan or a volume.
+# @param list containing input file strings
+# @returns RaveIOCore object
+def readRB5(filenamelist):
+    objects = readParameterFiles(filenamelist)
+    rio = _raveio.new()
+    if _polarscan.isPolarScan(objects[0]):
+        rio.object = compileScanParameters(objects)
+    elif _polarvolume.isPolarVolume(objects[0]):
+        rio.object = compileVolumeFromVolumes(objects)
+    return rio
+
+
+### Functions that assume input data are tarballed
+
 ## Reads RB5 files and merges their contents into an output ODIM_H5 file
 # @param string list of input file names
 # @param string output file name
 # @param Boolean if True, return the RaveIOCore object containing the decoded and merged RB5 data
-# @ returns RaveIOCore if return_rio=True, otherwise nothing
+# @returns RaveIOCore if return_rio=True, otherwise nothing
 def combineRB5(ifiles, out_fullfile=None, return_rio=False):
     big_obj=None
 
@@ -95,7 +278,7 @@ def combineRB5(ifiles, out_fullfile=None, return_rio=False):
 # @param string output file name
 # @param string output base directory, only used when creating new output file name  
 # @param Boolean if True, return the RaveIOCore object containing the decoded and merged RB5 data
-# @ returns RaveIOCore if return_rio=True, otherwise nothing
+# @returns RaveIOCore if return_rio=True, otherwise nothing
 def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
     validate(ifile)
     big_obj=None
@@ -108,7 +291,14 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
         inp_fullfile=this_member.name
         mb=parse_tarball_member_name(inp_fullfile)
 
-        if mb['rb5_ftype'] == "rawdata":
+#XAH DPATC_replay: Special filter out for ZPHI_ITER_DEFAULT.dpatc & ZDR
+        if (
+            (mb['rb5_ftype'] == "rawdata") and
+            not ((mb['rb5_ppdf'] == "ZPHI_ITER_DEFAULT.dpatc") and
+                 (mb['nam_sparam'] == "ZDR"))
+            ):
+
+#        if mb['rb5_ftype'] == "rawdata":
             obj_mb=tar.extractfile(this_member) #EXTRACTED MEMBER OBJECT
 #            import pdb; pdb.set_trace()
 
@@ -117,12 +307,9 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
             if not isrb5:
                 raise IOError, "%s is not a proper RB5 buffer" % rb5_buffer
             else:
-#                buffer_len=len(rb5_buffer)
                 buffer_len=obj_mb.size
-#                print '### inp_fullfile = %s (%ld)' % (inp_fullfile, buffer_len)
-#                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
-                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer) ## by BUFFER
-#                rio=_rb52odim.readRB5(inp_fullfile)              ## by FILENAME
+#                print '### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len)
+                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
                 this_obj=rio.object
 
                 if rio.objectType == _rave.Rave_ObjectType_PVOL:
@@ -165,7 +352,7 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
 # @param Boolean if True, return the RaveIOCore object containing the merged ODIM data
 # @param string cycle time interval in minutes
 # @param string combined task name
-# @ returns RaveIOCore if return_rio=True, otherwise nothing
+# @returns RaveIOCore if return_rio=True, otherwise nothing
 def combineRB5Tarballs2Pvol(ifiles, out_fullfile=None, return_rio=False, interval=None, taskname=None):
     rio_arr = []
 
@@ -183,7 +370,7 @@ def combineRB5Tarballs2Pvol(ifiles, out_fullfile=None, return_rio=False, interva
 # @param Boolean if True, return the RaveIOCore object containing the merged ODIM data
 # @param string cycle time interval in minutes
 # @param string combined task name
-# @ returns RaveIOCore if return_rio=True, otherwise nothing
+# @returns RaveIOCore if return_rio=True, otherwise nothing
 def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=None, taskname=None):
     pvol=None
 
@@ -322,6 +509,7 @@ def parse_tarball_member_name(fullfile,ignoredir=False):
         'rb5_site':rb5_site,\
         'rb5_ftype':rb5_ftype,\
         }
+
 
 def compile_big_scan(big_scan,scan,mb):
     sparam_arr=scan.getParameterNames()

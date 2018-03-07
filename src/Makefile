@@ -48,7 +48,7 @@ CFLAGS=	$(OPTS) $(CCSHARED) $(DEFS) $(CREATE_ITRUNC) $(RB52ODIMINC) -O0
 # --------------------------------------------------------------------
 # Fixed definitions
 
-RB52ODIMSOURCES= rb52odim.c time_utils.c RAVE_rb5_utils.c
+RB52ODIMSOURCES= rb52odim.c time_utils.c xml_utils.c RAVE_rb5_utils.c
 INSTALL_HEADERS= rb52odim.h
 RB52ODIMOBJS= $(RB52ODIMSOURCES:.c=.o)
 LIBRB52ODIM= librb52odim.so

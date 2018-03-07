@@ -31,4 +31,15 @@ from rb52odimTests import *
 
 
 if __name__ == '__main__':
-  unittest.main()
+#  unittest.main()
+
+  # do only this one test
+  suite = unittest.TestSuite()
+  suite.addTest(rb52odimTest("testCombineRB5Files"))
+
+  # do all
+  suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
+
+  #verbosity control added >=2.7 (crispus has 2.6.6!)
+  #".", "E" or "F" for "ok", "error" and "fail" written by self.AssertXXX method if verbose>=1
+  unittest.TextTestRunner(verbosity=3).run(suite)

@@ -27,7 +27,7 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 # @author Daniel Michelson and Peter Rodriguez, Environment and Climate Change Canada
 # @date 2017-06-14
 
-import sys, os, tarfile, errno
+import sys, os, tarfile, errno, re, glob
 import rb52odim
 
 
@@ -38,7 +38,7 @@ if __name__=="__main__":
     parser = OptionParser(usage=usage)
 
     parser.add_option("-i", "--input", dest="inputs",
-                      help="Single input Rainbow 5 file name, or sequence of comma-separated input Rainbow 5 file names. No white spaces allowed.")
+                      help="Single input Rainbow 5 file name, or sequence of comma-separated input Rainbow 5 file names, or string with wildcard. No white spaces allowed.")
 
     parser.add_option("-o", "--output", dest="ofile",
                       help="Output ODIM_H5 file name.")
@@ -59,7 +59,9 @@ if __name__=="__main__":
         parser.print_help()
         sys.exit(errno.EINVAL)        
 
-    ifiles = options.inputs.split(",")
+    if re.search('[*]', options.inputs):
+        ifiles = glob.glob(options.inputs)
+    else: ifiles = options.inputs.split(",")
     if len(ifiles) == 1:
 
         if not tarfile.is_tarfile(options.inputs):
@@ -72,8 +74,9 @@ if __name__=="__main__":
 
     else:
         if not tarfile.is_tarfile(ifiles[0]):
-            # Multiple untarred RB5 files to multi-variable ODIM_H5
-            rb52odim.combineRB5(ifiles, options.ofile)
+            # Multiple untarred RB5 files to multi-variable ODIM_H5, can be gzipped
+            rio = rb52odim.readRB5(ifiles)
+            rio.save(options.ofile)
 
         else:
             # Multiple RB5 scan tarballs to ODIM_H5 PVOL. Assumes that input 

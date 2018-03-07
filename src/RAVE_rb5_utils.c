@@ -17,8 +17,9 @@
 
 #include "rave_alloc.h"
 
-#include "rb5_utils.h"
 #include "time_utils.h"
+#include "xml_utils.h"
+#include "rb5_utils.h"
 
 //#############################################################################
 
@@ -38,115 +39,6 @@ size_t uncompress_this_blob(unsigned char *buf, unsigned char** return_uncompres
     
     *return_uncompressed_blob=uncompressed_blob;
     return(expectedSize);
-}
-
-//#############################################################################
-
-size_t get_xpath_size(const xmlXPathContextPtr xpathCtx, char *xpath){
-    size_t return_NULL_val=0;
-
-    const xmlChar* xpathExpr = (const xmlChar*) xpath;
-
-    // evaluate xpath expression
-    xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-    if(xpathObj == NULL) {
-        fprintf(stderr,"Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
-        return(return_NULL_val);
-    }
-
-    // use xpath object
-    xmlNodeSetPtr nodes = xpathObj->nodesetval;
-    size_t size = (nodes) ? nodes->nodeNr : 0;
-    if(size == 0) {
-        if(L_DEBUG_OUTPUT_1) fprintf(stderr,"Error: xpath expression not found \"%s\"\n", xpathExpr);
-        xmlXPathFreeObject(xpathObj);
-        return(return_NULL_val);
-    }
-
-    /* Cleanup */
-    xmlXPathFreeObject(xpathObj);
-
-    return(size);
-}
-
-//#############################################################################
-
-char *return_xpath_name(const xmlXPathContextPtr xpathCtx, char *xpath){
-
-    const xmlChar* xpathExpr = (const xmlChar*) xpath;
-
-    // evaluate xpath expression
-    xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-    if(xpathObj == NULL) {
-        fprintf(stderr,"Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
-        return("\0");
-    }
-
-    // use xpath object
-    xmlNodeSetPtr nodes = xpathObj->nodesetval;
-    size_t size = (nodes) ? nodes->nodeNr : 0;
-    if(size == 0) {
-        if(L_DEBUG_OUTPUT_1) fprintf(stderr,"Error: xpath expression not found \"%s\"\n", xpathExpr);
-        xmlXPathFreeObject(xpathObj);
-        return("\0");
-    }
-
-    //assume uniqueness, use [position()=X] in xpath 
-    //having used get_xpath_size() to build looping code
-    int iNode = 0; // get only 1st value at xpath
-    xmlNodePtr cur = (xmlNodePtr)xpathObj->nodesetval->nodeTab[iNode];
-    if(cur == NULL) {
-        fprintf(stderr,"Error: NULL node at xpath expression \"%s\"\n", xpathExpr);
-        xmlXPathFreeObject(xpathObj);
-        return("\0");
-    }
-    char *value = (char *) cur->name;
-//    fprintf(stdout,"XPATH: %s = %s\n", xpathExpr, value);
-
-    /* Cleanup */
-    xmlXPathFreeObject(xpathObj);
-
-    return(value);
-}
-
-//#############################################################################
-
-char *return_xpath_value(const xmlXPathContextPtr xpathCtx, char *xpath){
-
-    const xmlChar* xpathExpr = (const xmlChar*) xpath;
-
-    // evaluate xpath expression
-    xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-    if(xpathObj == NULL) {
-        fprintf(stderr,"Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
-        return("\0");
-    }
-
-    // use xpath object
-    xmlNodeSetPtr nodes = xpathObj->nodesetval;
-    size_t size = (nodes) ? nodes->nodeNr : 0;
-    if(size == 0) {
-        if(L_DEBUG_OUTPUT_1) fprintf(stderr,"Error: xpath expression not found \"%s\"\n", xpathExpr);
-        xmlXPathFreeObject(xpathObj);
-        return("\0");
-    }
-
-    //assume uniqueness, use [position()=X] in xpath 
-    //having used get_xpath_size() to build looping code
-    int iNode = 0; // get only 1st value at xpath
-    xmlNodePtr cur = (xmlNodePtr)xpathObj->nodesetval->nodeTab[iNode];
-    if(cur == NULL) {
-        fprintf(stderr,"Error: NULL node at xpath expression \"%s\"\n", xpathExpr);
-        xmlXPathFreeObject(xpathObj);
-        return("\0");
-    }
-    char *value = (char *) cur->children->content;
-//    fprintf(stdout,"XPATH: %s = %s\n", xpathExpr, value);
-
-    /* Cleanup */
-    xmlXPathFreeObject(xpathObj);
-
-    return(value);
 }
 
 //#############################################################################
@@ -171,52 +63,6 @@ char *get_xpath_iso8601_attrib(const xmlXPathContextPtr xpathCtx, char *xpath_bg
     //fprintf(stdout,"xpath = %s, iso8601=%s\n",xpath,iso8601);
     return(iso8601);
 
-}
-
-//#############################################################################
-
-size_t read_rb5_file_2_buffer(char *inp_fname, char **return_buffer){
-
-    size_t EXIT_NULL_VAL=0;
-    char *buffer=NULL;
-    size_t buffer_len=0;
-
-    FILE *fp = NULL;
-    fp = fopen(inp_fname, "r");
-    if (NULL == fp) {
-        fprintf(stderr,"Error while opening file = %s\n", inp_fname);
-        return(EXIT_NULL_VAL);
-    }
-
-    if (fseek(fp,0L,SEEK_END) == 0) {
-        /* Get the size of the file. */
-        buffer_len=ftell(fp);
-        if (buffer_len == -1) {
-            fprintf(stderr,"Error while reading file\n");
-            return(EXIT_NULL_VAL);
-        }
-
-        /* Allocate our buffer to that size. */
-        buffer=RAVE_MALLOC(sizeof(char)*(buffer_len));
-        if(L_DEBUG_OUTPUT_1) fprintf(stdout,"buffer_len = %ld\n",buffer_len);
-
-        /* Go back to the start of the file. */
-        if (fseek(fp,0L,SEEK_SET) != 0) {
-            fprintf(stderr,"Error while reading file\n");
-            return(EXIT_NULL_VAL);
-        }
-
-        /* Read the entire file into memory. */
-        if (fread(buffer,sizeof(char),buffer_len,fp) <= 0) {
-            fprintf(stderr,"Error while reading file\n");
-            return(EXIT_NULL_VAL);
-        }
-    } //if (fseek(fp,0L,SEEK_END) == 0) {
-    fclose(fp);
-
-    *return_buffer=buffer;
-
-    return(buffer_len);
 }
 
 //#############################################################################
@@ -414,7 +260,6 @@ size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_par
     size_blob=get_blobid_buffer(&(*rb5_info), blobid, &blob_buffer);
     if (blob_buffer == NULL) {
       fprintf(stdout,"ERROR: blobid = %ld NOT FOUND!!!\n",blobid);
-      xmlCleanupParser(); // free globals
       return(EXIT_NULL_VAL);
     }
 
@@ -564,7 +409,7 @@ strURPDATA what_is_this_param_to_urp(char *sparam){
             strcpy(urp.unit,"");
             strcpy(urp.desc,"Correlation Coefficient");
         } else if (strcmp(sparam, "uPhiDP") == 0 ){
-		   urp.type=216; //New URP decree 2017-Sep-12; was urp.type=16
+                   urp.type=216; //New URP decree 2017-Sep-12; was urp.type=16
             strcpy(urp.name,"UPHIDP");
             strcpy(urp.unit,"deg");
             strcpy(urp.desc,"Uncorrected Differential Phase");
@@ -593,7 +438,7 @@ void close_rb5_info(strRB5_INFO *rb5_info){
 
   if(rb5_info->xpathCtx != NULL) xmlXPathFreeContext(rb5_info->xpathCtx); //cleanup
   if(rb5_info->doc      != NULL) xmlFreeDoc(rb5_info->doc); // free the document
-  if(rb5_info->buffer   != NULL) RAVE_FREE(rb5_info->buffer); // free entire file buffer
+  if(rb5_info->buffer   != NULL) close_file_buffer(rb5_info->buffer); // free entire file buffer
 
   int this_slice;  
   for (this_slice = 0; this_slice < rb5_info->n_slices; this_slice++){
@@ -605,38 +450,7 @@ void close_rb5_info(strRB5_INFO *rb5_info){
     if(rb5_info->slice_moving_angle_arr[this_slice] != NULL) RAVE_FREE(rb5_info->slice_moving_angle_arr[this_slice]);
     if(rb5_info->slice_fixed_angle_arr[this_slice] != NULL) RAVE_FREE(rb5_info->slice_fixed_angle_arr[this_slice]);
   }
-  xmlCleanupParser(); // free globals
 
-}
-
-//#############################################################################
-
-float get_pw_by_index(strRB5_INFO *rb5_info, size_t this_pw_idx) {
-
-    float pw_val_arr[MAX_PULSE_WIDTHS];
-
-         if(strcmp(rb5_info->sensor_id,"XKR") == 0){ //CAX1 @ Albert Head, BC & King Radar, ON
-    pw_val_arr[0]=0.3;
-    pw_val_arr[1]=1.0;
-    pw_val_arr[2]=2.0;
-    pw_val_arr[3]=3.3;
-  } else if(strcmp(rb5_info->sensor_id,"XWH") == 0){ //CAX1 @ Whitehorse, YK
-    pw_val_arr[0]=0.3;
-    pw_val_arr[1]=1.0;
-    pw_val_arr[2]=2.0;
-    pw_val_arr[3]=3.3;
-  } else if(strcmp(rb5_info->sensor_id,"XSO") == 0){ //CAX2 @ Exeter, ON
-    pw_val_arr[0]=0.3;
-    pw_val_arr[1]=1.0;
-    pw_val_arr[2]=2.0;
-    pw_val_arr[3]=3.3;
-  } else if(strcmp(rb5_info->sensor_id,"X##") == 0){ //CAX3 @ ???, ??
-    pw_val_arr[0]=0.3;
-    pw_val_arr[1]=1.0;
-    pw_val_arr[2]=2.0;
-    pw_val_arr[3]=3.3;
-  }
-  return(pw_val_arr[this_pw_idx]);
 }
 
 //#############################################################################
@@ -669,44 +483,7 @@ if(L_DEBUG_OUTPUT_2) fprintf(stdout,"ifoundSLICE = %2d : %s = %s\n",ifoundSLICE,
 
 int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
-    // init pointers to NULL
-    rb5_info->xpathCtx=NULL;
-    rb5_info->doc=NULL;
-
-    //get byte offset of non-XML <BLOB> dataspace, to used by return_xpath_blobid_raw()
-    char substring[]="<!-- END XML -->";
-    char *match=NULL;
-    match=strstr(rb5_info->buffer,substring);
-    rb5_info->byte_offset_blobspace=match-(rb5_info->buffer)+strlen(substring)+1; //count trailing \n
-    if(L_DEBUG_OUTPUT_1) fprintf(stdout,"byte_offset_blobspace = %ld\n", rb5_info->byte_offset_blobspace);
-    if (rb5_info->byte_offset_blobspace == 0) {
-        fprintf(stderr,"Cannot read XML header in %s\n", rb5_info->inp_fullfile);
-        close_rb5_info(&(*rb5_info));
-        return(EXIT_FAILURE);
-    }
-
-    // init libxml
-    xmlInitParser();
-    LIBXML_TEST_VERSION;
-
-    // parse the XML header and get the DOM
-    xmlDoc *doc = xmlReadMemory(rb5_info->buffer, rb5_info->byte_offset_blobspace, "noname.xml", NULL, 0);
-    if (doc == NULL) {
-        fprintf(stderr,"Error while parsing XML header in file = %s\n", rb5_info->inp_fullfile);
-        close_rb5_info(&(*rb5_info));
-        return(EXIT_FAILURE);
-    }
-    rb5_info->doc=doc;
-
-    // create xpath evaluation context
-    xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
-    if(xpathCtx == NULL) {
-        fprintf(stderr,"Error: unable to create new XPath context\n");
-        close_rb5_info(&(*rb5_info));
-        return(EXIT_FAILURE);
-    }
-    rb5_info->xpathCtx=xpathCtx;
-
+    const xmlXPathContextPtr xpathCtx=rb5_info->xpathCtx;
     char xpath[MAX_STRING]="\0";
     char xpath_bgn[MAX_STRING]="\0";
 
@@ -930,8 +707,25 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_ray_angle_res_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/anglestep"));
                rb5_info->slice_ray_angle_bgn_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/startangle"));
                rb5_info->slice_ray_angle_end_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/stopangle"));
-               rb5_info->slice_pw_index         [this_slice]= atoi(get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
-               rb5_info->slice_pw_microsec      [this_slice]=get_pw_by_index(rb5_info,rb5_info->slice_pw_index[this_slice]);
+        //NOTE: since Rainbow v5.51 (re: CWRRP), pulse width determination via XML tag <pw_index> was replaced by <dynpw>
+        static char tmp_a[MAX_STRING]="\0";
+        if(strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw"))) {
+               rb5_info->slice_pw_index         [this_slice]=0; //radconst now a scalar
+               rb5_info->slice_pw_microsec      [this_slice]=atof(tmp_a);
+        } else {
+               size_t slice_pw_index=atoi(get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
+               rb5_info->slice_pw_index         [this_slice]=slice_pw_index;
+               if(slice_pw_index == 0){
+                 rb5_info->slice_pw_microsec    [this_slice]=0.3;
+               } else if(slice_pw_index == 1) {
+                 rb5_info->slice_pw_microsec    [this_slice]=1.0;
+               } else if(slice_pw_index == 2) {
+                 rb5_info->slice_pw_microsec    [this_slice]=2.0;
+               } else if(slice_pw_index == 3) {
+                 rb5_info->slice_pw_microsec    [this_slice]=3.3;
+               }
+        }
+
                rb5_info->slice_antspeed_deg_sec [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/antspeed"));
                rb5_info->slice_antspeed_rpm     [this_slice]= rb5_info->slice_antspeed_deg_sec [this_slice]/360.*60.;
                rb5_info->slice_num_samples      [this_slice]= atoi(get_xpath_slice_attrib(xpathCtx,this_slice,"/timesamp"));
@@ -946,6 +740,7 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_noise_power_h    [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/noise_power_dbz"));
                rb5_info->slice_noise_power_v    [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/noise_power_dbz_dpv"));
 
+        //NOTE: since Rainbow v5.51 (re: CWRRP), radconst is a scalar
         static char rspdphradconst[MAX_STRING]="\0";
         static char rspdpvradconst[MAX_STRING]="\0";
         strcpy(rspdphradconst,get_xpath_slice_attrib(xpathCtx,this_slice,"/rspdphradconst"));

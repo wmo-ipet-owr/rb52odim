@@ -23,7 +23,7 @@ rb52odim unit tests
 @author Daniel Michelson and Peter Rodriguez, Environment and Climate Change Cananda
 @date 2016-08-17
 '''
-import os, unittest, types
+import os, unittest, types, glob
 import _rave
 import _raveio
 import _polarscan
@@ -32,25 +32,28 @@ import _ravefield
 import _rb52odim, rb52odim
 import numpy as np
 
+_rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
+
 ## Helper functions for ODIM validation below. For some reason, unit test
 #  objects can't pass tests to methods, but they can be passed to functions.
 
-# Lib/rb52odim.py:mergeODIMscans2pvol() added these to the top level
+# Lib/rb52odim.py:mergeOdimScans2Pvol() added these to the top level
 TOP_IGNORE=[
-           'how/sw_version'
-          ,'how/wavelength'
+           'how/task'
+          ,'how/TXtype'
           ,'how/beamwH'
           ,'how/beamwV'
           ,'how/polmode'
           ,'how/poltype'
-          ,'how/system'
           ,'how/software'
-          ,'how/TXtype'
+          ,'how/sw_version'
+          ,'how/system'
+          ,'how/wavelength'
           ]
 
 # Not needed because RAVE either assigns these automagically, or they are just not relevant
 IGNORE = ['what/version', 'what/object', 
-          'what/_orig_file_format', 'what/_orig_file_name'] + TOP_IGNORE
+          'how/_orig_file_format'] + TOP_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
@@ -61,7 +64,7 @@ def validateAttributes(utest, obj, ref_obj):
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
                 utest.assertTrue(np.array_equal(attr, ref_attr))
             else:
-                #print aname, attr, ref_attr
+#                print aname, attr, ref_attr
                 utest.assertEquals(attr, ref_attr)
 
 
@@ -95,6 +98,7 @@ def validateScan(utest, scan, ref_scan):
     utest.assertEquals(scan.rscale, ref_scan.rscale)
     utest.assertEquals(scan.rstart, ref_scan.rstart)
     for pname in ref_scan.getParameterNames():
+#        print pname
         utest.assertEquals(scan.hasParameter(pname), 
                            ref_scan.hasParameter(pname))
         param = scan.getParameter(pname)
@@ -137,7 +141,6 @@ class rb52odimTest(unittest.TestCase):
         "../Dopvol1_A.azi/2015120916500500W.azi",\
         "../Dopvol1_A.azi/2015120916500500ZDR.azi"\
         ]
-    dummy=0 #tools/run_python_script.sh: line 101: 21639 Segmentation fault ?!?
     NEW_H5_FILELIST = "../Dopvol1_A.azi/caxah_dopvol1a_20151209T1650Z.new.h5"
     REF_H5_FILELIST = "../Dopvol1_A.azi/caxah_dopvol1a_20151209T1650Z.h5"
     RB5_TARBALL_DOPVOL1A = "../caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
@@ -149,6 +152,11 @@ class rb52odimTest(unittest.TestCase):
     REF_H5_TARBALL_DOPVOL1B = "../caxah_dopvol1b_20151209T1650Z.azi.h5"
     REF_H5_MERGED_PVOL = "../caxah_dopvol_20151209T1650Z.ref.h5"
     NEW_H5_MERGED_PVOL = "../caxah_dopvol_20151209T1650Z.vol.new.h5"
+    CASRA_AZI_dBZ = "../CASRA_2017121520051400dBZ.azi.gz"
+    CASRA_AZI = "../CASRA*azi*"
+    CASRA_VOL = "../CASRA*vol*.gz"
+    CASRA_H5_SCAN = "../CASRA_20171215200514_scan.h5"
+    CASRA_H5_PVOL = "../CASRA_20171215200003_pvol.h5"
 
     def setUp(self):
         pass
@@ -293,3 +301,46 @@ class rb52odimTest(unittest.TestCase):
             validateScan(self, new_scan, ref_scan)
 
         os.remove(self.NEW_H5_MERGED_PVOL)
+
+    def testGunzip(self):
+        fstr = rb52odim.gunzip(self.CASRA_AZI_dBZ)
+        self.assertTrue(_rb52odim.isRainbow5(fstr))
+        os.remove(fstr)
+
+    def testRoundDT(self):
+        DATE, TIME = '20171222', '235914'  # input
+        refd, reft = '20171223', '000000'  # output
+        newd, newt = rb52odim.roundDT(DATE, TIME)
+        self.assertTrue(newd, refd)
+        self.assertTrue(newt, reft)
+
+    # Somewhat construed way of testing readParameterFiles()
+    def testReadParameters(self):
+        scan = rb52odim.readParameterFiles([self.CASRA_AZI_dBZ])[0]
+        ref = _raveio.open(self.CASRA_H5_SCAN).object
+        for pname in ref.getParameterNames():
+            if pname != 'DBZH':
+                ref.removeParameter(pname)
+        validateScan(self, scan, ref)
+
+    def testCompileScanParameters(self):
+        scans = rb52odim.readParameterFiles(glob.glob(self.CASRA_AZI))
+        oscan = rb52odim.compileScanParameters(scans)
+        ref = _raveio.open(self.CASRA_H5_SCAN).object
+        validateScan(self, oscan, ref)
+
+    def testCompileVolumeFromVolumes(self):
+        volumes = rb52odim.readParameterFiles(glob.glob(self.CASRA_VOL))
+        ovolume = rb52odim.compileVolumeFromVolumes(volumes)
+        ref = _raveio.open(self.CASRA_H5_PVOL).object
+        validateTopLevel(self, ovolume, ref)
+        for i in range(ovolume.getNumberOfScans()):
+            oscan = ovolume.getScan(i)
+            rscan = ref.getScan(i)
+            oscan.date, oscan.time = rscan.date, rscan.time # times are not aligned until the pvol is written to disk, so this is a workaround
+            validateScan(self, oscan, rscan)
+
+    def testReadRB5(self):
+        rio = rb52odim.readRB5([self.CASRA_AZI_dBZ])
+        self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
+

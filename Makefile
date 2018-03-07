@@ -44,6 +44,7 @@ install:
 		$(MAKE) -C modules install
 		$(MAKE) -C Lib install
 		$(MAKE) -C bin install
+		$(MAKE) -C config install
 
 .PHONY=clean
 clean:

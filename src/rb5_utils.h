@@ -151,18 +151,13 @@ typedef struct{
 // function declarations
 //#############################################################################
 size_t uncompress_this_blob(unsigned char *buf, unsigned char** return_uncompressed_blob, size_t compressed_size_blob);
-size_t get_xpath_size(const xmlXPathContextPtr xpathCtx, char *xpath);
-char *return_xpath_name(const xmlXPathContextPtr xpathCtx, char *xpath);
-char *return_xpath_value(const xmlXPathContextPtr xpathCtx, char *xpath);
 char *get_xpath_iso8601_attrib(const xmlXPathContextPtr xpathCtx, char *xpath_bgn);
-size_t read_rb5_file_2_buffer(char *inp_fname, char **return_buffer);
 size_t get_blobid_buffer(strRB5_INFO *rb5_info, int req_blobid, unsigned char** return_uncompressed_blob);
 void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, float **return_data_arr);
 size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_param, void **return_raw_arr);
 char *map_rb5_to_h5_param(char *sparam);
 strURPDATA what_is_this_param_to_urp(char *sparam);
 void close_rb5_info(strRB5_INFO *rb5_info);
-float get_pw_by_index(strRB5_INFO *rb5_info, size_t this_pw_idx);
 char *get_xpath_slice_attrib(const xmlXPathContextPtr xpathCtx, size_t this_slice, char *xpath_end);
 int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE);
 strRB5_PARAM_INFO get_rb5_param_info(strRB5_INFO *rb5_info, char *xpath_bgn, int L_VERBOSE);

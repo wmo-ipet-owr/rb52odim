@@ -102,10 +102,6 @@ static PyObject* _isRainbow5buf_func(PyObject* self, PyObject* args) {
     } else return PyBool_FromLong(0);  /* False */
   }
 
-//TBD: DONE now
-//derive isRainbow5(filename) for isRainbow5buf(1st_line_buffer)
-//derive getRaveIO(filename) for getRaveIObuf(rb5_buffer)
-
   return PyBool_FromLong(0);  /* False */
 
 }
@@ -137,16 +133,19 @@ static PyObject* _isRainbow5_func(PyObject* self, PyObject* args) {
 static PyObject* _readRB5buf_func(PyObject* self, PyObject* args) {
   const char* filename;
   char* rb5_buffer;
+  Py_ssize_t ignore_count = 0;
   Py_ssize_t buffer_len = 0;
   PyRaveIO* result = NULL;
   RaveIO_t* raveio = NULL;
 
-  if (!PyArg_ParseTuple(args, "ss#", &filename, &rb5_buffer, &buffer_len)) {
+  if (!PyArg_ParseTuple(args, "ss#l", &filename, &rb5_buffer, &ignore_count, &buffer_len)) {
     return Py_None;
   }
  
   //Copy Python's buffer. Needed for close_rb5_info()'s free(rb5_info->buffer)
-  char* my_rb5_buffer=RAVE_MALLOC(sizeof(char)*(buffer_len));
+  /* my_rb5_buffer is freed in xml_utils.c:close_file_buffer, so we can't 
+     allocate memory for it using RAVE_MALLOC */
+  char* my_rb5_buffer=malloc(sizeof(char)*(buffer_len));
   memcpy(my_rb5_buffer,rb5_buffer,(size_t)buffer_len);
 
   raveio = getRaveIObuf((char *)filename,&my_rb5_buffer,(size_t)buffer_len);
