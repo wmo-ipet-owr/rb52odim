@@ -79,7 +79,7 @@ if __name__=="__main__":
             rio.save(options.ofile)
 
         else:
-            # Multiple RB5 scan tarballs to ODIM_H5 PVOL. Assumes that input 
+            # Multiple RB5 scan tarballs to ODIM_H5 PVOL. Assumes that input
             # tarballs do not contain single-moment scans or volumes.
             rb52odim.combineRB5Tarballs2Pvol(ifiles, options.ofile, 
                                              False, 
