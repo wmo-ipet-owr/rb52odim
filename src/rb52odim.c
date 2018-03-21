@@ -353,9 +353,8 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     if(getenv("RB52ODIMCONFIG")==NULL){
       fprintf(stderr,"Error cannot getenv(\"RB52ODIMCONFIG\")\n");
       return(EXIT_FAILURE);
-      // hack for command-line version
+      // Peter-Rodriguez hack for command-line version
       // export RB52ODIMCONFIG=~/Projects/BALTRAD/rb52odim/config
-      // strcpy(inp_fname,"../config/odim_radar_table.xml");
     } else {
       strcpy(inp_fname,getenv("RB52ODIMCONFIG"));
       strcat(inp_fname,"/");
