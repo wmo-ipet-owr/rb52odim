@@ -641,12 +641,18 @@ int isRainbow5buf(char **inp_buffer) {
 	int RETURN_yes = 0;
 	int RETURN_no = -1;
 
-    char line[MAX_STRING]="\0";
     char *eol = strchr(*inp_buffer, '\n');
     size_t len=eol-*inp_buffer;
-//    fprintf(stdout,"len : %ld\n",len);
+    //check for proper read header line
+    if ((eol == NULL) || (len >= MAX_STRING)) {
+        fprintf(stderr,"Error header line not proper (likely not ASCII), eol = %p, len = %ld\n", eol, len);
+        return RETURN_no;
+    }
+
+    char line[MAX_STRING]="\0";
     strncpy(line,*inp_buffer,len);
     line[len]='\0'; //add terminator
+//    fprintf(stdout,"len : %ld\n",len);
 //    fprintf(stdout,"line : %s\n",line);
 
     char *substring="<volume version=\"";
@@ -658,16 +664,15 @@ int isRainbow5buf(char **inp_buffer) {
     match_bgn=match_bgn ? strchr(match_bgn  ,'\"') : 0; //1st " in match
     match_end=match_bgn ? strchr(match_bgn+1,'\"') : 0; //next " in match
     if(!(match_bgn && match_end)){
-        fprintf(stdout,"Error: Cannot find <volume>\n");
+        fprintf(stderr,"Error: Cannot find <volume version=x.xx.xx>\n");
         return RETURN_no;
     }
     ++match_bgn;
     match_len=match_end-match_bgn;
     strncpy(match_val,match_bgn,match_len);
     match_val[match_len]='\0';
-//    fprintf(stdout,"match_val : %s\n",match_val);
     if(strcmp(match_val,MINIMUM_RAINBOW_VERSION) < 0){
-        //fprintf(stdout,"Error: Incompatible Rainbow version, this is v%s, (v%s minumum)\n",match_val,MINIMUM_RAINBOW_VERSION);
+        fprintf(stderr,"Error: Incompatible Rainbow version, this is v%s, (v%s minumum)\n",match_val,MINIMUM_RAINBOW_VERSION);
         return RETURN_no;
     }
 
@@ -694,7 +699,8 @@ int isRainbow5(const char* inp_fname) {
     size_t len=0;
     getline(&line,&len,fp);
     fclose(fp);
-//keep for subsequent '\n' line extraction in isRainbow5buf()
+
+    //Note, trailing '\n' kept for subsequent proper header line extraction in isRainbow5buf()
 //    line[strlen(line)-1]='\0'; //trim trailing <LF>
 //    fprintf(stdout,"line : %s\n",line);
 

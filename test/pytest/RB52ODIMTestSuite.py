@@ -35,10 +35,11 @@ if __name__ == '__main__':
 
   # do only this one test
   suite = unittest.TestSuite()
-  suite.addTest(rb52odimTest("testCombineRB5Files"))
+#  suite.addTest(rb52odimTest("testCombineRB5Files"))
+  suite.addTest(rb52odimTest("testWrongInput"))
 
   # do all
-  suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
+#  suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
 
   #verbosity control added >=2.7 (crispus has 2.6.6!)
   #".", "E" or "F" for "ok", "error" and "fail" written by self.AssertXXX method if verbose>=1

@@ -164,6 +164,10 @@ class rb52odimTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testWrongInput(self):
+        status = _rb52odim.isRainbow5(self.CASRA_AZI_dBZ)
+        self.assertFalse(status)
+
     def testIsBadRB5Input(self):
         status = _rb52odim.isRainbow5(self.BAD_RB5_VOL)
         self.assertFalse(status)
