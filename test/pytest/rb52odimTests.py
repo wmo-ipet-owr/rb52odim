@@ -64,8 +64,8 @@ def validateAttributes(utest, obj, ref_obj):
             ref_attr = ref_obj.getAttribute(aname)
 #            print attr, ref_attr
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
-#                utest.assertTrue(np.array_equal(attr, ref_attr))
-                np.testing.assert_allclose(attr, ref_attr, rtol=1e-2, atol=0) #for no remake of ref files (numpy v1.16)
+                utest.assertTrue(np.array_equal(attr, ref_attr))
+#                np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
             else:
                 utest.assertEquals(attr, ref_attr)
 
