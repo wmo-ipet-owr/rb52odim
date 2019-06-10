@@ -741,23 +741,34 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_ray_angle_bgn_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/startangle"));
                rb5_info->slice_ray_angle_end_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/stopangle"));
         //NOTE: since Rainbow v5.51 (re: CWRRP), pulse width determination via XML tag <pw_index> was replaced by <dynpw>
+        size_t slice_pw_index;
+        float slice_pw_microsec;
         static char tmp_a[MAX_STRING]="\0";
-        if(strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw"))) {
-               rb5_info->slice_pw_index         [this_slice]=0; //radconst now a scalar
-               rb5_info->slice_pw_microsec      [this_slice]=atof(tmp_a);
+        strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw"));
+        if(tmp_a[0] != '\0') {
+               slice_pw_index=(size_t) 0;
+               slice_pw_microsec=atof(tmp_a);
         } else {
-               size_t slice_pw_index=atoi(get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
-               rb5_info->slice_pw_index         [this_slice]=slice_pw_index;
-               if(slice_pw_index == 0){
-                 rb5_info->slice_pw_microsec    [this_slice]=0.3;
-               } else if(slice_pw_index == 1) {
-                 rb5_info->slice_pw_microsec    [this_slice]=1.0;
-               } else if(slice_pw_index == 2) {
-                 rb5_info->slice_pw_microsec    [this_slice]=2.0;
-               } else if(slice_pw_index == 3) {
-                 rb5_info->slice_pw_microsec    [this_slice]=3.3;
+               strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
+               if(tmp_a[0] != '\0') {
+                    slice_pw_index=atoi(tmp_a);
+                    if(slice_pw_index == 0){
+                        slice_pw_microsec=0.3;
+                    } else if(slice_pw_index == 1) {
+                        slice_pw_microsec=1.0;
+                    } else if(slice_pw_index == 2) {
+                        slice_pw_microsec=2.0;
+                    } else if(slice_pw_index == 3) {
+                        slice_pw_microsec=3.3;
+                    }
                }
         }
+        if(L_VERBOSE){
+            fprintf(stdout,"%s = %ld\n", "slice_pw_index", slice_pw_index);
+            fprintf(stdout,"%s = %f\n", "slice_pw_microsec", slice_pw_microsec);
+        }
+               rb5_info->slice_pw_index         [this_slice]=slice_pw_index;
+               rb5_info->slice_pw_microsec      [this_slice]=slice_pw_microsec;
 
                rb5_info->slice_antspeed_deg_sec [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/antspeed"));
                rb5_info->slice_antspeed_rpm     [this_slice]= rb5_info->slice_antspeed_deg_sec [this_slice]/360.*60.;
@@ -802,12 +813,13 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
         if(L_VERBOSE){
             strncpy(stmpa,rb5_info->slice_dual_prf_mode[this_slice]+strlen("SdfDPrfMode"),3);
             stmpa[3]='\0'; //add NULL terminator
-            fprintf(stdout," %s -> %s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %.3f sec)\n",
+            fprintf(stdout," %s -> %s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %4.2f us_pw, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %.3f sec)\n",
                 xpath_bgn,
                      return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/slicedata/rawdata/@type")),
                 rb5_info->angle_deg_arr[this_slice],
                 rb5_info->slice_bin_range_res_km[this_slice],
                 rb5_info->slice_ray_angle_res_deg[this_slice],
+                rb5_info->slice_pw_microsec[this_slice],
                 rb5_info->slice_num_samples[this_slice],
                 stmpa,
                 rb5_info->slice_hi_prf[this_slice],
