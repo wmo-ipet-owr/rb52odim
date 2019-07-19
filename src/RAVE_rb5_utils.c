@@ -11,8 +11,8 @@
  *                This file to replace header and includes,
  *                - vi cmd: dd #until all orig lines gone upto 1st comment line 
  *                - vi cmd: :0r head_RAVE_rb5_utils.c.txt
- *                - vi cmd: :23,$s/malloc(/RAVE_MALLOC(/g
- *                - vi cmd: :23,$s/free(/RAVE_FREE(/g
+ *                - vi cmd: :24,$s/malloc(/RAVE_MALLOC(/g
+ *                - vi cmd: :24,$s/free(/RAVE_FREE(/g
  */
 
 #include "rave_alloc.h"
@@ -162,11 +162,13 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
     strcpy(sparam,rb5_param->sparam);
     size_t n_elems_data    =rb5_param->n_elems_data;
     size_t raw_binary_depth=rb5_param->raw_binary_depth;
-    size_t raw_binary_width=rb5_param->raw_binary_width;
+    size_t raw_binary_min;
+    size_t raw_binary_max;
+    size_t raw_binary_width;
     float data_range_min   =rb5_param->data_range_min;
     float data_range_max   =rb5_param->data_range_max;
-    float data_range_width =rb5_param->data_range_width;
-    float data_step        =rb5_param->data_step;
+    float data_range_width;
+    float data_step;
     float NODATA_val=-99;
 
     size_t i;
@@ -188,18 +190,31 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
 
     float *data_arr=NULL;
     data_arr=RAVE_MALLOC(n_elems_data*sizeof(float));
+
+    //straight copy 
     if (strcmp(conversion, "copy") == 0) {
+        raw_binary_min=0L;
+        raw_binary_max=(1L<<raw_binary_depth)-1;
+        raw_binary_width=raw_binary_max-raw_binary_min;
+        data_range_min=(float)raw_binary_min;
+        data_range_max=(float)raw_binary_max;
+        data_range_width=data_range_max-data_range_min;
+        data_step=data_range_width/raw_binary_width; //65535/65535=1.0
         for (i = 0; i < n_elems_data; i++) {
           data_arr[i]=raw_arr[i];
           if(L_DEBUG_OUTPUT_2) fprintf(stdout,"%f ",data_arr[i]);
         }
         if(L_DEBUG_OUTPUT_2) fprintf(stdout,"\n");
-        NODATA_val = 0;
+        NODATA_val = -999.9; //n/a?
+    //RB5_FileFormat_5430.pdf, pg.47 (scaling) data_range_max 360.0 NOT mapped!
     } else if (strcmp(conversion, "angular") == 0) {
+        raw_binary_min=0L;
+        raw_binary_max=(1L<<raw_binary_depth)-1;
+        raw_binary_width=raw_binary_max-raw_binary_min+1; //above data_range_max by a data_step (then trimmed)
         data_range_min=0.0;
         data_range_max=360.0;
         data_range_width=data_range_max-data_range_min;
-        data_step=data_range_width/raw_binary_width;
+        data_step=data_range_width/raw_binary_width; //360.0/65536=0.0054931641
         if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  data_step = %f\n",data_step);
         for (i = 0; i < (n_elems_data); i++) {
           data_arr[i]=(raw_arr[i] * data_step) + data_range_min;
@@ -207,8 +222,13 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
           if(L_DEBUG_OUTPUT_2) fprintf(stdout,"%f ",data_arr[i]);
         }
         if(L_DEBUG_OUTPUT_2) fprintf(stdout,"\n");
-        NODATA_val = (0 * data_step) - data_step + data_range_min;
-    } else if (strstr(conversion, "data") != NULL) {
+        NODATA_val = -999.9; //n/a?
+    //RB5_FileFormat_5430.pdf, pg.22 (data types have 0x00 reserved for "no data" & data_range_max IS mapped)
+    } else if (strcmp(conversion, "moment_data") == 0) {
+        raw_binary_min=1L;
+        raw_binary_max=(1L<<raw_binary_depth)-1;
+        raw_binary_width=raw_binary_max-raw_binary_min;
+
         //removed special param packing check, 2017-Mar-23
         // we found KDP have variable data range!
         // using rb5_param->data_range_min|max defaults (set in var declaration above)
@@ -219,8 +239,9 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
         //    data_range_min=  0.0;
         //    data_range_max=360.0;
         //}
+        
         data_range_width=data_range_max-data_range_min;
-        data_step=data_range_width/raw_binary_width;
+        data_step=data_range_width/raw_binary_width; //127.0/254=0.5 for dBZ
         if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  data_step = %f\n",data_step);
         for (i = 0; i < n_elems_data; i++) {
           data_arr[i]=(raw_arr[i] * data_step) - data_step + data_range_min;
@@ -228,10 +249,15 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
         }
         if(L_DEBUG_OUTPUT_2) fprintf(stdout,"\n");
         NODATA_val = (0 * data_step) - data_step + data_range_min;
+    } else {
+        fprintf(stdout,"  ERROR : Unknown conversion method = %s\n",conversion);
     }
     if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  NODATA_val = %f\n",NODATA_val);
 
     //update
+    rb5_param->raw_binary_min=raw_binary_min;
+    rb5_param->raw_binary_max=raw_binary_max;
+    rb5_param->raw_binary_width=raw_binary_width;
     rb5_param->data_range_min  =data_range_min;
     rb5_param->data_range_max  =data_range_max;
     rb5_param->data_range_width=data_range_width;
@@ -338,6 +364,7 @@ char *map_rb5_to_h5_param(char *sparam){
 //        } else if (strcmp(sparam, "uPhiDP") == 0 ){; strcpy(return_string,"uPHIDP");
 //        } else if (strcmp(sparam, "PhiDP" ) == 0 ){; strcpy(return_string,"PHIDP");
 //        } else if (strcmp(sparam, "KDP"   ) == 0 ){; strcpy(return_string,"KDP");
+        } else if (strcmp(sparam, "ET"   ) == 0 ){; strcpy(return_string,"CLASS");
         } else {
             strcpy(return_string,sparam);
             int i;
@@ -353,6 +380,7 @@ char *map_rb5_to_h5_param(char *sparam){
 
 strURPDATA what_is_this_param_to_urp(char *sparam){
     strURPDATA urp;
+    // see ~/Projects/IRIS/sigmet/include/sigtypes.h
     // see /apps/urp/build/include/drpdecode.h
                    urp.type=-1;
             strcpy(urp.name,"n/a");
@@ -428,6 +456,11 @@ strURPDATA what_is_this_param_to_urp(char *sparam){
             strcpy(urp.name,"KDP");
             strcpy(urp.unit,"deg/km");
             strcpy(urp.desc,"Specific Differential Phase");
+        } else if (strcmp(sparam, "ET") == 0 ){
+                   urp.type=55; //Hydrometeor Class (1 byte)
+            strcpy(urp.name,"HCLASS");
+            strcpy(urp.unit,"");
+            strcpy(urp.desc,"Hydrometeor Class (was RB5 Echo Type))");
         }
     return(urp);
 }
@@ -708,23 +741,34 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_ray_angle_bgn_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/startangle"));
                rb5_info->slice_ray_angle_end_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/stopangle"));
         //NOTE: since Rainbow v5.51 (re: CWRRP), pulse width determination via XML tag <pw_index> was replaced by <dynpw>
+        size_t slice_pw_index;
+        float slice_pw_microsec;
         static char tmp_a[MAX_STRING]="\0";
-        if(strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw"))) {
-               rb5_info->slice_pw_index         [this_slice]=0; //radconst now a scalar
-               rb5_info->slice_pw_microsec      [this_slice]=atof(tmp_a);
+        strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw"));
+        if(tmp_a[0] != '\0') {
+               slice_pw_index=(size_t) 0;
+               slice_pw_microsec=atof(tmp_a);
         } else {
-               size_t slice_pw_index=atoi(get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
-               rb5_info->slice_pw_index         [this_slice]=slice_pw_index;
-               if(slice_pw_index == 0){
-                 rb5_info->slice_pw_microsec    [this_slice]=0.3;
-               } else if(slice_pw_index == 1) {
-                 rb5_info->slice_pw_microsec    [this_slice]=1.0;
-               } else if(slice_pw_index == 2) {
-                 rb5_info->slice_pw_microsec    [this_slice]=2.0;
-               } else if(slice_pw_index == 3) {
-                 rb5_info->slice_pw_microsec    [this_slice]=3.3;
+               strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/pw_index"));
+               if(tmp_a[0] != '\0') {
+                    slice_pw_index=atoi(tmp_a);
+                    if(slice_pw_index == 0){
+                        slice_pw_microsec=0.3;
+                    } else if(slice_pw_index == 1) {
+                        slice_pw_microsec=1.0;
+                    } else if(slice_pw_index == 2) {
+                        slice_pw_microsec=2.0;
+                    } else if(slice_pw_index == 3) {
+                        slice_pw_microsec=3.3;
+                    }
                }
         }
+        if(L_VERBOSE){
+            fprintf(stdout,"%s = %ld\n", "slice_pw_index", slice_pw_index);
+            fprintf(stdout,"%s = %f\n", "slice_pw_microsec", slice_pw_microsec);
+        }
+               rb5_info->slice_pw_index         [this_slice]=slice_pw_index;
+               rb5_info->slice_pw_microsec      [this_slice]=slice_pw_microsec;
 
                rb5_info->slice_antspeed_deg_sec [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/antspeed"));
                rb5_info->slice_antspeed_rpm     [this_slice]= rb5_info->slice_antspeed_deg_sec [this_slice]/360.*60.;
@@ -769,12 +813,13 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
         if(L_VERBOSE){
             strncpy(stmpa,rb5_info->slice_dual_prf_mode[this_slice]+strlen("SdfDPrfMode"),3);
             stmpa[3]='\0'; //add NULL terminator
-            fprintf(stdout," %s -> %s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %.3f sec)\n",
+            fprintf(stdout," %s -> %s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %4.2f us_pw, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %.3f sec)\n",
                 xpath_bgn,
                      return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/slicedata/rawdata/@type")),
                 rb5_info->angle_deg_arr[this_slice],
                 rb5_info->slice_bin_range_res_km[this_slice],
                 rb5_info->slice_ray_angle_res_deg[this_slice],
+                rb5_info->slice_pw_microsec[this_slice],
                 rb5_info->slice_num_samples[this_slice],
                 stmpa,
                 rb5_info->slice_hi_prf[this_slice],
@@ -869,12 +914,6 @@ strRB5_PARAM_INFO get_rb5_param_info(strRB5_INFO *rb5_info, char *xpath_bgn, int
     // pre-calc, to be confirmed by return_param_blobid_raw()
     rb5_param.n_elems_data=rb5_param.nrays*rb5_param.nbins;
 
-    rb5_param.raw_binary_min=(1L<<          0               );
-    rb5_param.raw_binary_max=(1L<<rb5_param.raw_binary_depth)-1;
-    rb5_param.raw_binary_width=rb5_param.raw_binary_max-rb5_param.raw_binary_min;
-    rb5_param.data_range_width=rb5_param.data_range_max-rb5_param.data_range_min;
-    rb5_param.data_step=rb5_param.data_range_width/rb5_param.raw_binary_width;
-
             if((strcmp(rb5_param.sparam, "dataflag") == 0) ||
                (strcmp(rb5_param.sparam, "numpulses") == 0 ) ||
                (strcmp(rb5_param.sparam, "timestamp") == 0 ) ||
@@ -887,14 +926,17 @@ strRB5_PARAM_INFO get_rb5_param_info(strRB5_INFO *rb5_info, char *xpath_bgn, int
                (strcmp(rb5_param.sparam, "startfixangle") == 0 ) ||
                (strcmp(rb5_param.sparam, "stopfixangle") == 0 )) {
         strcpy(rb5_param.conversion,"angular");
-    } else  if( (strcmp(rb5_param.sparam, "uPhiDP") == 0) ||
-               (strcmp(rb5_param.sparam, "PhiDP") == 0 )) {
-        strcpy(rb5_param.conversion,"phidp_data");
-    } else  if( (strcmp(rb5_param.sparam, "uKDP") == 0) ||
-               (strcmp(rb5_param.sparam, "KDP") == 0 )) {
-        strcpy(rb5_param.conversion,"kdp_data");
+    //removed special param packing check, 2017-Mar-23
+//    } else  if( (strcmp(rb5_param.sparam, "uPhiDP") == 0) ||
+//               (strcmp(rb5_param.sparam, "PhiDP") == 0 )) {
+//        strcpy(rb5_param.conversion,"phidp_data");
+//    } else  if( (strcmp(rb5_param.sparam, "uKDP") == 0) ||
+//               (strcmp(rb5_param.sparam, "KDP") == 0 )) {
+//        strcpy(rb5_param.conversion,"kdp_data");
+    } else  if((strcmp(rb5_param.sparam, "ET") == 0)) {
+        strcpy(rb5_param.conversion,"copy");
     } else {
-        strcpy(rb5_param.conversion,"reg_data");
+        strcpy(rb5_param.conversion,"moment_data");
     }
 
     rb5_param.NODATA_val=-999; //TBD
@@ -1136,9 +1178,9 @@ void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
         return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
         convert_raw_to_data(&rb5_param,&raw_arr,&data_arr);
         for (i = 0; i < this_nrays; i++) {
-            //handle RHI -'ve elevation angles
+            //handle RHI -'ve elevation angles as per RB5_FileFormat_5510.pdf, pg.48 "angle (ELE scan)"
             if(strcmp(rb5_info->scan_type,"ele") == 0){
-                if(data_arr[i] > 270.){
+                if(data_arr[i] > 225.){
                     data_arr[i]-=360.0;
                 }
             }

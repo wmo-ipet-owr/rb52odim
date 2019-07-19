@@ -813,25 +813,26 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
 	    RAVE_OBJECT_RELEASE(dataflag_attr);
         // add comment about dataflag bit encoding
         ret = addStringAttribute((RaveCoreObject*)scan, "how/comment",
-            "From RB5_FileFormat_5430.pdf, Sec 2.3.2.1.1: Array 'rayinfo'\n"
-            "dataflag 16-bits:\n"
-            "0x0001 = signal processing error\n"
-            "0x0002 = pulse error\n"
-            "0x0004 = digital AFC step during CPI occured\n"
-            "0x0008 = not used\n"
-            "0x0010 = not used\n"
-            "0x0020 = not used\n"
-            "0x0040 = not used\n"
-            "0x0080 = not used\n"
-            "0x0100 = high PRF indication for fixed dual PRF mode\n"
-            "0x0200 = TX power above limit (default: 120% of nominal value)\n"
-            "0x0400 = TX power below limit (default: 80% of nominal power)\n"
-            "0x0600 = (= 0x0200 | 0x0400) TX power below critical limit (default: 50% of nominal power)\n"
-            "0x0800 = not used\n"
-            "0x1000 = not used\n"
-            "0x2000 = not used\n"
-            "0x4000 = not used\n"
-            "0x8000 = not used");
+            "From RB5_FileFormat_5510.pdf, Sec 2.3.2.1.1: Array 'rayinfo'\n"
+            "<dataflag> (16-bit):\n"
+            "  0x0001 = signal processing error\n"
+            "  0x0002 = pulse error\n"
+            "  0x0004 = digital AFC step during CPI occured\n"
+            "  0x0008 = not used\n"
+            "  0x0010 = not used\n"
+            "  0x0020 = not used\n"
+            "  0x0040 = not used\n"
+            "  0x0080 = not used\n"
+            "  0x0100 = high PRF indication for fixed dual PRF mode\n"
+            "  0x0200 = TX power above limit (default: 120% of nominal value)\n"
+            "  0x0400 = TX power below limit (default: 80% of nominal power)\n"
+            "  0x0600 = (= 0x0200 | 0x0400) TX power below critical limit (default: 50% of nominal power)\n"
+            "  0x0800 = not used\n"
+            "  0x1000 = not used\n"
+            "  0x2000 = not used\n"
+            "  0x4000 = not used\n"
+            "  0x8000 = not used\n"
+            "<noisepowerh>, <noisepowerv> (32-bit): added in v5.44.0, noise power at 100 km range in dBZ");
       }else if(strcmp(rb5_param.sparam,"numpulses") == 0){
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays);
@@ -847,12 +848,12 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         RaveAttribute_t* txpower_attr = RaveAttributeHelp_createDoubleArray("how/TXpower", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, txpower_attr);
 	    RAVE_OBJECT_RELEASE(txpower_attr);
-      }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //UNITS?!?
+      }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerh_attr);
 	    RAVE_OBJECT_RELEASE(noisepowerh_attr);
-      }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //UNITS?!?
+      }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerv_attr);
