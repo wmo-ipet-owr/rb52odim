@@ -47,31 +47,19 @@ int objectTypeFromRB5(strRB5_INFO rb5_info) {
  */
 int populateParam(PolarScanParam_t* param, strRB5_INFO *rb5_info, strRB5_PARAM_INFO *rb5_param) {
 	int ret = 0;
-	//	RaveDataType type;
-
-	/* Map RB5 moments to ODIM, e g. corrected horizontal reflectivity */
-	PolarScanParam_setQuantity(param, map_rb5_to_h5_param(rb5_param->sparam));
-
-	/* Linear scaling factor, with an example for 8-bit reflectivity */
-	PolarScanParam_setGain(param, rb5_param->data_step);
-
-	/* Linear scaling offset, with an example for 8-bit reflectivity */
-	PolarScanParam_setOffset(param, rb5_param->data_range_min);
-
-	/* Value for 'no data', ie. unradiated areas, with a convention used for reflectivity */
-    //left to user to mask by either <dataflag> or <txpower> if available
-	PolarScanParam_setNodata(param, rb5_param->raw_binary_max); 
-
-	/* Value for 'undetected', ie. areas radiated but with no echo, with a convention used for reflectivity */
-	PolarScanParam_setUndetect(param, 0);
-
 	/* Access the data buffer from RB5. Ensure they are ordered properly, ie. with the first ray pointing north. */
 	//rb5_util vars
     //Note: my decode returns a void*, user must resolve by data_depth, i.e.  data_type
+    //convert_raw_to_data() populates rb5_param structure as per conversion type
 	void *raw_arr=NULL;
+    float *data_arr=NULL;
     return_param_blobid_raw(&(*rb5_info), &(*rb5_param), &raw_arr);
-//  float *data_arr=NULL;
-//  convert_raw_to_data(&(*rb5_param),&raw_arr,&data_arr);
+
+    // fake n_elems_data = 0 to skip converted data_arr creation/return (more efficient; not necessary)
+    size_t orig_n_elems_data=rb5_param->n_elems_data;
+    rb5_param->n_elems_data=0;
+    convert_raw_to_data(&(*rb5_param),&raw_arr,&data_arr);
+    rb5_param->n_elems_data=orig_n_elems_data; //restore
 
 	/* Figure out what data depth this moment of data is in, ie. 8, 16, 32, or 64-bit (u)int or float.
 	 * Map to Toolbox equivalent. This example is for 16-bit unsigned int */
@@ -97,7 +85,25 @@ int populateParam(PolarScanParam_t* param, strRB5_INFO *rb5_info, strRB5_PARAM_I
 //	ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type); //hmm, doesn't type cast
 
 	if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
-//  if (data_arr != NULL ) RAVE_FREE(data_arr);
+    if (data_arr != NULL ) RAVE_FREE(data_arr);
+
+	//	RaveDataType type;
+
+	/* Map RB5 moments to ODIM, e g. corrected horizontal reflectivity */
+	PolarScanParam_setQuantity(param, map_rb5_to_h5_param(rb5_param->sparam));
+
+	/* Linear scaling factor, with an example for 8-bit reflectivity */
+	PolarScanParam_setGain(param, rb5_param->data_step);
+
+	/* Linear scaling offset, with an example for 8-bit reflectivity */
+	PolarScanParam_setOffset(param, rb5_param->data_range_min);
+
+	/* Value for 'no data', ie. unradiated areas, with a convention used for reflectivity */
+    //left to user to mask by either <dataflag> or <txpower> if available
+	PolarScanParam_setNodata(param, rb5_param->raw_binary_max); 
+
+	/* Value for 'undetected', ie. areas radiated but with no echo, with a convention used for reflectivity */
+	PolarScanParam_setUndetect(param, 0);
 
 	/* We'll add appropriate exception handling later */
 	return ret;
