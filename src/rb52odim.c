@@ -336,6 +336,8 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     
 	ret = addStringAttribute(object, "how/_creator_program", "rb52odim");
 	ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"Rainbow "),rb5_info->rainbow_version));
+	ret = addStringAttribute(object, "how/_orig_sensor_id", rb5_info->sensor_id);
+	ret = addStringAttribute(object, "how/_orig_sensor_name", rb5_info->sensor_name);
 
     /* Time is recorded according to object and sweep order:
      * If bottom-up volume or scan, it's the start of the (first/lowest) scan.
