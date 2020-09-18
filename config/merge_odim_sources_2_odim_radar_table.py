@@ -21,35 +21,61 @@ to_merge_odim_table_file='odim_radar_table.STB_research_Xbands.xml'
 sBGN_MERGE_TABLE='<table'
 sEND_MERGE_TABLE='</table>'
 
-dict_radar_template={ \
-    'radar_id'    :'', \
-    'bgn_date'    :'', \
-    'end_date'    :'', \
-    'label'       :'', \
-    'operator'    :'RUAD', \
-    'band'        :'', \
-    'odim_node'   :'', \
-    'locale'      :'', \
-    'admin_state' :'', \
-    'country'     :'Canada', \
-    'wmo_id'      :'', \
-    'rf_call_sign':'', \
-    'make'        :'', \
-    'model'       :'', \
-    'serial'      :'', \
-    'txtype'      :'', \
-    'poltype'     :'', \
-    'comment'     :'Auto-merged entry from : '+odim_source_file, \
-    }
+from collections import OrderedDict
+ordered_dict_keys=[\
+    'radar_id'    ,\
+    'bgn_date'    ,\
+    'end_date'    ,\
+    'label'       ,\
+    'operator'    ,\
+    'band'        ,\
+    'odim_node'   ,\
+    'locale'      ,\
+    'admin_state' ,\
+    'country'     ,\
+    'wmo_id'      ,\
+    'rf_call_sign',\
+    'make'        ,\
+    'model'       ,\
+    'serial'      ,\
+    'txtype'      ,\
+    'poltype'     ,\
+    'comment'     ,\
+]
+dict_radar_template=OrderedDict((key,'') for key in ordered_dict_keys)
+dict_radar_template['operator']='RUAD'
+dict_radar_template['country']='Canada'
+dict_radar_template['comment']='Auto-merged entry from : '+odim_source_file
 
-dict_Sband=dict_radar_template
+#dict_radar_template={ \
+#    'radar_id'    :'', \
+#    'bgn_date'    :'', \
+#    'end_date'    :'', \
+#    'label'       :'', \
+#    'operator'    :'RUAD', \
+#    'band'        :'', \
+#    'odim_node'   :'', \
+#    'locale'      :'', \
+#    'admin_state' :'', \
+#    'country'     :'Canada', \
+#    'wmo_id'      :'', \
+#    'rf_call_sign':'', \
+#    'make'        :'', \
+#    'model'       :'', \
+#    'serial'      :'', \
+#    'txtype'      :'', \
+#    'poltype'     :'', \
+#    'comment'     :'Auto-merged entry from : '+odim_source_file, \
+#    }
+
+dict_Sband=dict_radar_template.copy()
 dict_Sband['band'   ]='S'
 dict_Sband['make'   ]='SELEX/Rainbow'
 dict_Sband['model'  ]='1700S'
 dict_Sband['txtype' ]='klystron'
 dict_Sband['poltype']='simultaneous-dual'
 
-dict_Xband=dict_radar_template
+dict_Xband=dict_radar_template.copy()
 dict_Xband['band'   ]='X'
 dict_Xband['make'   ]='SELEX/Rainbow'
 dict_Xband['model'  ]='60DX'
@@ -58,7 +84,7 @@ dict_Xband['poltype']='simultaneous-dual'
 
 # not output to odim_table_file
 NRP_exception_X_ids=['ca'+s for s in ['xra','xsi','xsm','xss','xti','xwl']] #pre-CWRRP, these are Cbands
-dict_Cband=dict_radar_template
+dict_Cband=dict_radar_template.copy()
 dict_Cband['band'   ]='C'
 dict_Cband['make'   ]='Vaisala/IRIS'
 dict_Cband['model'  ]=''
@@ -82,18 +108,18 @@ with open(odim_source_file,'r') as fp:
             (locale,admin_state)=plc.rsplit(maxsplit=1)
             this_dict_radar=None
             if node[2] == 's':
-                this_dict_radar=dict_Sband
+                this_dict_radar=dict_Sband.copy()
             elif node[2] == 'x':
                 if node not in NRP_exception_X_ids:
-                    this_dict_radar=dict_Xband
+                    this_dict_radar=dict_Xband.copy()
             if this_dict_radar:
                 this_dict_radar['radar_id'   ]=node.upper()
-                this_dict_radar['label'      ]=this_dict_radar['band']+'-band'+\
-                    ' at '+this_dict_radar['locale']+', '+this_dict_radar['admin_state']+\
-                    ' ('+this_dict_radar['operator']+')'
                 this_dict_radar['odim_node'  ]=node
                 this_dict_radar['locale'     ]=locale
                 this_dict_radar['admin_state']=admin_state
+                this_dict_radar['label'      ]=this_dict_radar['band']+'-band'+\
+                    ' at '+this_dict_radar['locale']+', '+this_dict_radar['admin_state']+\
+                    ' ('+this_dict_radar['operator']+')'
                 out_fp.write(sINDENT+\
                     '<radar id="'+this_dict_radar['radar_id']+'" '+ \
                     'bgn_date="'+this_dict_radar['bgn_date']+'" '+ \
