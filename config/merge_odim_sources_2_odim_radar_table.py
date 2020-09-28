@@ -145,5 +145,6 @@ if L_MERGE:
     for sOUT in merge_content_arr:
         out_fp.write(sOUT+'\n')
 
+out_fp.write('</table>\n')
 out_fp.write('<!-- END XML -->\n')
 logging.info('Created : {0}'.format(odim_table_file))
