@@ -63,7 +63,7 @@ ordered_dict_keys=[\
     'comment'     ,\
 ]
 dict_radar_template=OrderedDict((key,'') for key in ordered_dict_keys)
-dict_radar_template['operator']='RUAD'
+dict_radar_template['operator']='NRP'
 dict_radar_template['country' ]='Canada'
 dict_radar_template['comment' ]='Auto-merged entry from : '+odim_source_file
 
