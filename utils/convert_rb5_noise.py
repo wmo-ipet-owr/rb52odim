@@ -16,6 +16,7 @@ f_val = convert_uint_2_float(i_val) #-7.06103515625
 ###################################################################################################
 
 def rng_correct(inp_val,inp_km,out_km):
+    import numpy as np
     return inp_val-20*np.log10(inp_km/out_km)
 
 NEZH_001km=-47.5302 #at 1 km
