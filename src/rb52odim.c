@@ -838,7 +838,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
             "  0x2000 = not used\n"
             "  0x4000 = not used\n"
             "  0x8000 = not used\n"
-            "<noisepowerh>, <noisepowerv> (32-bit): added in v5.44.0, noise power at 100 km range in dBZ");
+            "<noisepowerh>, <noisepowerv> range corrected noise power at 1 km range [dBZ]");
       }else if(strcmp(rb5_param.sparam,"numpulses") == 0){
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays);
@@ -855,13 +855,21 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         ret = PolarScan_addAttribute(scan, txpower_attr);
 	    RAVE_OBJECT_RELEASE(txpower_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
-        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
-        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
+//        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
+//        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
+        //convert IEEE 754 "single format" bit layout to 32 bit floating-point
+        float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
+        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerh", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerh_attr);
 	    RAVE_OBJECT_RELEASE(noisepowerh_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
-        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
-        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
+//        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
+//        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
+        //convert IEEE 754 "single format" bit layout to 32 bit floating-point
+        float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
+        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerv", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerv_attr);
 	    RAVE_OBJECT_RELEASE(noisepowerv_attr);
       }
