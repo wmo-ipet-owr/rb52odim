@@ -53,8 +53,13 @@ TOP_IGNORE=[
           ]
 
 # Not needed because RAVE either assigns these automagically, or they are just not relevant
-IGNORE = ['what/version', 'what/object', 
-          'how/_orig_file_format'] + TOP_IGNORE
+IGNORE = [
+    'what/version',
+    'what/object', 
+    'how/_orig_file_format',
+    'how/noisepowerh', #accept both raw (long) or processed (double)
+    'how/noisepowerv', #accept both raw (long) or processed (double)
+    ] + TOP_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
