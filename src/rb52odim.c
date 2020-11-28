@@ -394,11 +394,18 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
 
     // Rainbow should be configured with a unique 3-char id
     sprintf(xpath_bgn,"(/table/radar)[*][@id='%s']",rb5_info->sensor_id);
-    sprintf(tmp_a,"NOD:%s,PLC:%s %s",
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale")),
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state"))
-        );
+    if (return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state")) != NULL) {
+        sprintf(tmp_a,"NOD:%s,PLC:%s %s",
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state"))
+            );
+    } else {
+        sprintf(tmp_a,"NOD:%s,PLC:%s",
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale"))
+            );
+    }
     if(L_RB52ODIM_DEBUG) printf("\n%s: odim_source = %s\n",rb5_info->sensor_id,tmp_a);
     if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
       PolarVolume_setDate     ((PolarVolume_t*)object,func_iso8601_2_yyyymmdd(iso8601));
