@@ -40,8 +40,9 @@ if __name__ == '__main__':
 #  suite.addTest(rb52odimTest("testCombineRB5FromTarball"))
 #  suite.addTest(rb52odimTest("testCompileScanParameters"))
 #  suite.addTest(rb52odimTest("testCompileVolumeFromVolumes"))
+#  suite.addTest(rb52odimTest("testMergeOdimScans2Pvol"))
 
-  # do all
+# do all
   suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
 
   #verbosity control added >=2.7 (crispus has 2.6.6!)
