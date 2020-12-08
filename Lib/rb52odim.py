@@ -409,17 +409,17 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.beamwidth=scan.beamwidth
 
                 pvol.addAttribute("how/task", taskname)
-        		for s_attrib in [
-                	"how/TXtype",
-				    "how/beamwH",
-                    "how/beamwV",
+       		for s_attrib in [
+                    "how/TXtype",
+#not in REF                    "how/beamwH",
+#not in REF                    "how/beamwV",
                     "how/polmode",
                     "how/poltype",
                     "how/software",
                     "how/sw_version",
                     "how/system",
                     "how/wavelength",
-    				]:
+                    ]:
                     pvol.addAttribute(s_attrib, scan.getAttribute(s_attrib))
 
             pvol.addScan(scan)
