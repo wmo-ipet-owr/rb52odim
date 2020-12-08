@@ -215,8 +215,8 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
 	ret = addStringAttribute(object, "how/clutterMap",  "Off"); // (not used)
 
 // NOTE: these attributes may not exist in the original RB5 raw file, thus check
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
 
 //	ret = addDoubleAttribute(object, "how/nsampleH",    ); // n/a
 //	ret = addDoubleAttribute(object, "how/nsampleV",    ); // n/a
@@ -414,7 +414,16 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
       PolarVolume_setLongitude((PolarVolume_t*)object,rb5_info->sensor_lon_deg*DEG_TO_RAD);
       PolarVolume_setLatitude ((PolarVolume_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarVolume_setHeight   ((PolarVolume_t*)object,rb5_info->sensor_alt_m); //m_asl
+//      //rave-py3: _setBeamwidth() will populate beamwH attrib
       PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+//      //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
+//      //rave-py3: new _setBeamwH/V() methods
+//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
+//        PolarVolume_setBeamwH((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
+//      }
+//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
+//        PolarVolume_setBeamwV((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
+//      }
     } else {
       PolarScan_setDate     ((PolarScan_t*)object,func_iso8601_2_yyyymmdd(iso8601));
       PolarScan_setTime     ((PolarScan_t*)object,func_iso8601_2_hhmmss(iso8601));
@@ -422,7 +431,15 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
       PolarScan_setLongitude((PolarScan_t*)object,rb5_info->sensor_lon_deg*DEG_TO_RAD);
       PolarScan_setLatitude ((PolarScan_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarScan_setHeight   ((PolarScan_t*)object,rb5_info->sensor_alt_m); //m_asl
+//      //rave-py3: _setBeamwidth() will populate beamwH attrib
       PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+//      //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
+//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
+//        PolarScan_setBeamwH((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
+//      }
+//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
+//        PolarScan_setBeamwV((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
+//      }
     }
 
     //#############################################################################//
@@ -460,21 +477,23 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     
 // as per Issue #23, found in <slice refid="0">
 // NOTE: these attributes may not exist in the original RB5 raw file, thus check
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq"))) ret = addDoubleAttribute(object, "how/RXfrequency", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"))       ) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"))    ) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"))       ) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"))    ) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
+//ERROR: creates an attrib with value=str('')=0.0  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ,"")) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq")),"")) ret = addDoubleAttribute(object, "how/RXfrequency", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"))       ,"")) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"))    ,"")) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"))       ,"")) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"))    ,"")) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ,"")) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ,"")) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
+//rave-py3:  for beamwH/V, these 2 generic attribs now part of Polar{Volume/Scan} struct (see above for method() use)
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
 
     // NOTE, rest set at SCAN level: rpm, prf's pw, Nyquist, noise_power_dbz, nsamples
 

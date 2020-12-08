@@ -197,7 +197,7 @@ def compileVolumeFromScans(scans, adjustTime=True):
     firstscan=False  
     volume = _polarvolume.new()
 
-    #'longitude', 'latitude', 'height', 'time', 'date', 'source'
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth'
 
     for scan in scans:
         if firstscan == False:
@@ -407,16 +407,21 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
                 pvol.beamwidth=scan.beamwidth
-                sATTRIB='how/task'; pvol.addAttribute(sATTRIB,taskname)
-                sATTRIB='how/TXtype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwH'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwV'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/polmode'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/poltype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/software'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/sw_version'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/system'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/wavelength'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
+
+                pvol.addAttribute("how/task", taskname)
+        		for s_attrib in [
+                	"how/TXtype",
+				    "how/beamwH",
+                    "how/beamwV",
+                    "how/polmode",
+                    "how/poltype",
+                    "how/software",
+                    "how/sw_version",
+                    "how/system",
+                    "how/wavelength",
+    				]:
+                    pvol.addAttribute(s_attrib, scan.getAttribute(s_attrib))
+
             pvol.addScan(scan)
 
     container=_raveio.new()
