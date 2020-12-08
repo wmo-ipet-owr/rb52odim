@@ -37,6 +37,28 @@ _rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
 ## Helper functions for ODIM validation below. For some reason, unit test
 #  objects can't pass tests to methods, but they can be passed to functions.
 
+# NEED TO REMAKE REFERENCE H5 FILES
+# src/rb52odim.c:populateObject() failed to catch these EMPTY values (get_xpath_slice_attrib == "")
+# and created the attribs with value=str('')=0.0
+IFFY_ATTRIB_IGNORE=[
+    "how/zcalH",
+    "how/zcalV",
+    "how/my_foobar",
+    "how/RXfrequency",
+    "how/TXlossH",
+    "how/TXlossV",
+    "how/RXlossH",
+    "how/RXlossV",
+    "how/radomelossH",
+    "how/radomelossV",
+    "how/antgainH",
+    "how/antgainV",
+    "how/beamwH",
+    "how/beamwV",
+    "how/gasattn",
+    ]
+
+
 # Lib/rb52odim.py:mergeOdimScans2Pvol() added these to the top level
 TOP_IGNORE=[
            'how/task'
@@ -53,8 +75,13 @@ TOP_IGNORE=[
           ]
 
 # Not needed because RAVE either assigns these automagically, or they are just not relevant
-IGNORE = ['what/version', 'what/object', 
-          'how/_orig_file_format'] + TOP_IGNORE
+IGNORE = [
+    'what/version',
+    'what/object', 
+    'how/_orig_file_format',
+    'how/noisepowerh', #accept both raw (long) or processed (double)
+    'how/noisepowerv', #accept both raw (long) or processed (double)
+    ] + TOP_IGNORE + IFFY_ATTRIB_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
