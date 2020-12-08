@@ -35,8 +35,8 @@
         <comment>Moved from Albert Head, BC. Returned to King Radar</comment>
     </radar>
     <radar id="XBV" bgn_date="2017-08-10" end_date="2018-04-01">
-        <label>CAX2 at Blainville (RUAD)</label>
-        <operator>RUAD</operator>
+        <label>CAX2 at Blainville (NRP)</label>
+        <operator>NRP</operator>
         <band>X</band>
         <odim_node>caxbv</odim_node>
         <locale>Blainville</locale>
@@ -52,8 +52,8 @@
         <comment>Moved from Exeter, ON</comment>
     </radar>
     <radar id="XSO" bgn_date="2016-08-15" end_date="2017-05-21">
-        <label>CAX2 at Exeter (RUAD)</label>
-        <operator>RUAD</operator>
+        <label>CAX2 at Exeter (NRP)</label>
+        <operator>NRP</operator>
         <band>X</band>
         <odim_node>caxso</odim_node>
         <locale>Exeter</locale>
