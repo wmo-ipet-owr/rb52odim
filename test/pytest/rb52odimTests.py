@@ -32,33 +32,13 @@ import _ravefield
 import _rb52odim, rb52odim
 import numpy as np
 
+# see http://git.baltrad.eu/git/?p=rave.git;a=blob_plain;f=modules/rave.c
 _rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
+#_rave.setDebugLevel(_rave.Debug_RAVE_DEBUG)
+#_rave.setDebugLevel(_rave.Debug_RAVE_WARNING)
 
 ## Helper functions for ODIM validation below. For some reason, unit test
 #  objects can't pass tests to methods, but they can be passed to functions.
-
-# DONE... TBD REMAKE REFERENCE H5 FILES
-# src/rb52odim.c:populateObject() failed to catch these EMPTY values (get_xpath_slice_attrib == "")
-# and created the attribs with value=str('')=0.0
-# bundled into ${RAVEROOT}/Lib/_rb52odim.so... make install
-IFFY_ATTRIB_IGNORE=[
-    "how/zcalH",
-    "how/zcalV",
-    "how/my_foobar",
-    "how/RXfrequency",
-    "how/TXlossH",
-    "how/TXlossV",
-    "how/RXlossH",
-    "how/RXlossV",
-    "how/radomelossH",
-    "how/radomelossV",
-    "how/antgainH",
-    "how/antgainV",
-    "how/beamwH",
-    "how/beamwV",
-    "how/gasattn",
-    ]
-
 
 # Lib/rb52odim.py:mergeOdimScans2Pvol() added these to the top level
 TOP_IGNORE=[
@@ -82,7 +62,7 @@ IGNORE = [
     'how/_orig_file_format',
     'how/noisepowerh', #accept both raw (long) or processed (double)
     'how/noisepowerv', #accept both raw (long) or processed (double)
-    ] + TOP_IGNORE #+ IFFY_ATTRIB_IGNORE
+    ] + TOP_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
@@ -96,41 +76,41 @@ def validateAttributes(utest, obj, ref_obj):
                 utest.assertTrue(np.array_equal(attr, ref_attr))
 #                np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
             else:
-                utest.assertEquals(attr, ref_attr)
+                utest.assertEqual(attr, ref_attr)
 
 
 def validateTopLevel(utest, obj, ref_obj):
-    utest.assertEquals(obj.source, ref_obj.source)
-    utest.assertEquals(obj.date , ref_obj.date)
-    utest.assertEquals(obj.time, ref_obj.time)
-    utest.assertAlmostEquals(obj.longitude, ref_obj.longitude, 12)
-    utest.assertAlmostEquals(obj.latitude, ref_obj.latitude, 12)
-    utest.assertAlmostEquals(obj.height, ref_obj.height, 12)
-    utest.assertAlmostEquals(obj.beamwidth, ref_obj.beamwidth, 12)
+    utest.assertEqual(obj.source, ref_obj.source)
+    utest.assertEqual(obj.date , ref_obj.date)
+    utest.assertEqual(obj.time, ref_obj.time)
+    utest.assertAlmostEqual(obj.longitude, ref_obj.longitude, 12)
+    utest.assertAlmostEqual(obj.latitude, ref_obj.latitude, 12)
+    utest.assertAlmostEqual(obj.height, ref_obj.height, 12)
+    utest.assertAlmostEqual(obj.beamwidth, ref_obj.beamwidth, 12)
     validateAttributes(utest, obj, ref_obj)
 
 
 def validateScan(utest, scan, ref_scan):
-    utest.assertEquals(scan.source, ref_scan.source)
-    utest.assertEquals(scan.date, ref_scan.date)
-    utest.assertEquals(scan.time, ref_scan.time)
-    utest.assertEquals(scan.startdate, ref_scan.startdate)
-    utest.assertEquals(scan.starttime, ref_scan.starttime)
-    utest.assertEquals(scan.enddate, ref_scan.enddate)
-    utest.assertEquals(scan.endtime, ref_scan.endtime)
-    utest.assertAlmostEquals(scan.longitude, ref_scan.longitude, 12)
-    utest.assertAlmostEquals(scan.latitude, ref_scan.latitude, 12)
-    utest.assertAlmostEquals(scan.height, ref_scan.height, 12)
-    utest.assertAlmostEquals(scan.beamwidth, ref_scan.beamwidth, 12)
-    utest.assertAlmostEquals(scan.elangle, ref_scan.elangle, 12)
-    utest.assertEquals(scan.nrays, ref_scan.nrays)
-    utest.assertEquals(scan.nbins, ref_scan.nbins)
-    utest.assertEquals(scan.a1gate, ref_scan.a1gate)
-    utest.assertEquals(scan.rscale, ref_scan.rscale)
-    utest.assertEquals(scan.rstart, ref_scan.rstart)
+    utest.assertEqual(scan.source, ref_scan.source)
+    utest.assertEqual(scan.date, ref_scan.date)
+    utest.assertEqual(scan.time, ref_scan.time)
+    utest.assertEqual(scan.startdate, ref_scan.startdate)
+    utest.assertEqual(scan.starttime, ref_scan.starttime)
+    utest.assertEqual(scan.enddate, ref_scan.enddate)
+    utest.assertEqual(scan.endtime, ref_scan.endtime)
+    utest.assertAlmostEqual(scan.longitude, ref_scan.longitude, 12)
+    utest.assertAlmostEqual(scan.latitude, ref_scan.latitude, 12)
+    utest.assertAlmostEqual(scan.height, ref_scan.height, 12)
+    utest.assertAlmostEqual(scan.beamwidth, ref_scan.beamwidth, 12)
+    utest.assertAlmostEqual(scan.elangle, ref_scan.elangle, 12)
+    utest.assertEqual(scan.nrays, ref_scan.nrays)
+    utest.assertEqual(scan.nbins, ref_scan.nbins)
+    utest.assertEqual(scan.a1gate, ref_scan.a1gate)
+    utest.assertEqual(scan.rscale, ref_scan.rscale)
+    utest.assertEqual(scan.rstart, ref_scan.rstart)
     for pname in ref_scan.getParameterNames():
 #        print 'pname : '+pname
-        utest.assertEquals(scan.hasParameter(pname), 
+        utest.assertEqual(scan.hasParameter(pname), 
                            ref_scan.hasParameter(pname))
         param = scan.getParameter(pname)
         ref_param = ref_scan.getParameter(pname)
@@ -220,7 +200,7 @@ class rb52odimTest(unittest.TestCase):
         self.assertTrue(rio.objectType is _rave.Rave_ObjectType_PVOL)
         pvol = rio.object
         ref_pvol = _raveio.open(self.REF_H5_VOL).object
-        self.assertEquals(pvol.getNumberOfScans(), ref_pvol.getNumberOfScans())
+        self.assertEqual(pvol.getNumberOfScans(), ref_pvol.getNumberOfScans())
         validateTopLevel(self, pvol, ref_pvol)
         for i in range(pvol.getNumberOfScans()):
             scan = pvol.getScan(i)
@@ -243,7 +223,7 @@ class rb52odimTest(unittest.TestCase):
         ref_rio = _raveio.open(self.REF_H5_VOL)
         self.assertTrue(new_rio.objectType is _rave.Rave_ObjectType_PVOL)
         new_pvol, ref_pvol = new_rio.object, ref_rio.object
-        self.assertEquals(new_pvol.getNumberOfScans(), ref_pvol.getNumberOfScans())
+        self.assertEqual(new_pvol.getNumberOfScans(), ref_pvol.getNumberOfScans())
         validateTopLevel(self, new_pvol, ref_pvol)
         for i in range(new_pvol.getNumberOfScans()):
             new_scan = new_pvol.getScan(i)
@@ -301,7 +281,7 @@ class rb52odimTest(unittest.TestCase):
         new_rio = _raveio.open(self.NEW_H5_MERGED_PVOL)
         self.assertTrue(new_rio.objectType is _rave.Rave_ObjectType_PVOL)
         new_pvol = new_rio.object
-        self.assertEquals(new_pvol.getNumberOfScans(), 3)
+        self.assertEqual(new_pvol.getNumberOfScans(), 3)
         validateMergedPvol(self, new_pvol, 0, self.RB5_TARBALL_DOPVOL1A)
         validateMergedPvol(self, new_pvol, 1, self.RB5_TARBALL_DOPVOL1B)
         validateMergedPvol(self, new_pvol, 2, self.RB5_TARBALL_DOPVOL1C)
@@ -327,7 +307,7 @@ class rb52odimTest(unittest.TestCase):
         new_pvol, ref_pvol = new_rio.object, ref_rio.object
 
         self.assertTrue(new_rio.objectType is _rave.Rave_ObjectType_PVOL)
-        self.assertEquals(new_pvol.getNumberOfScans(), 
+        self.assertEqual(new_pvol.getNumberOfScans(), 
                           ref_pvol.getNumberOfScans())
         validateTopLevel(self, new_pvol, ref_pvol)
         for i in range(new_pvol.getNumberOfScans()):
