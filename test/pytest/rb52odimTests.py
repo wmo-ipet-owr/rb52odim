@@ -37,9 +37,10 @@ _rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
 ## Helper functions for ODIM validation below. For some reason, unit test
 #  objects can't pass tests to methods, but they can be passed to functions.
 
-# NEED TO REMAKE REFERENCE H5 FILES
+# DONE... TBD REMAKE REFERENCE H5 FILES
 # src/rb52odim.c:populateObject() failed to catch these EMPTY values (get_xpath_slice_attrib == "")
 # and created the attribs with value=str('')=0.0
+# bundled into ${RAVEROOT}/Lib/_rb52odim.so... make install
 IFFY_ATTRIB_IGNORE=[
     "how/zcalH",
     "how/zcalV",
@@ -81,7 +82,7 @@ IGNORE = [
     'how/_orig_file_format',
     'how/noisepowerh', #accept both raw (long) or processed (double)
     'how/noisepowerv', #accept both raw (long) or processed (double)
-    ] + TOP_IGNORE + IFFY_ATTRIB_IGNORE
+    ] + TOP_IGNORE #+ IFFY_ATTRIB_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
@@ -153,40 +154,40 @@ def validateMergedPvol(self, new_pvol, iSCAN, ref_RB5_TARBALL):
 
 
 class rb52odimTest(unittest.TestCase):
-    BAD_RB5_VOL  = "../2008053002550300dBZ.vol"
-    GOOD_RB5_VOL = "../2016092614304000dBZ.vol"
-    GOOD_RB5_AZI = "../2016081612320300dBZ.azi"
-    NEW_H5_VOL = "../2016092614304000dBZ.vol.new.h5"
-    NEW_H5_AZI = "../2016081612320300dBZ.azi.new.h5"
-    REF_H5_VOL = "../2016092614304000dBZ.vol.h5"  # Assumes that these reference files are ODIM compliant
-    REF_H5_AZI = "../2016081612320300dBZ.azi.h5"  
+    BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol"
+    GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol"
+    GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi"
+    NEW_H5_VOL = "../new/2016092614304000dBZ.vol.new.h5"
+    NEW_H5_AZI = "../new/2016081612320300dBZ.azi.new.h5"
+    REF_H5_VOL = "../ref/2016092614304000dBZ.vol.ref.h5"  # Assumes that these reference files are ODIM compliant
+    REF_H5_AZI = "../ref/2016081612320300dBZ.azi.ref.h5"  
     FILELIST_RB5 = [\
-        "../Dopvol1_A.azi/2015120916500500dBuZ.azi",\
-        "../Dopvol1_A.azi/2015120916500500dBZ.azi",\
-        "../Dopvol1_A.azi/2015120916500500PhiDP.azi",\
-        "../Dopvol1_A.azi/2015120916500500RhoHV.azi",\
-        "../Dopvol1_A.azi/2015120916500500SQI.azi",\
-        "../Dopvol1_A.azi/2015120916500500uPhiDP.azi",\
-        "../Dopvol1_A.azi/2015120916500500V.azi",\
-        "../Dopvol1_A.azi/2015120916500500W.azi",\
-        "../Dopvol1_A.azi/2015120916500500ZDR.azi"\
+        "../org/Dopvol1_A.azi/2015120916500500dBuZ.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500dBZ.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500PhiDP.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500RhoHV.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500SQI.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500uPhiDP.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500V.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500W.azi",\
+        "../org/Dopvol1_A.azi/2015120916500500ZDR.azi"\
         ]
-    NEW_H5_FILELIST = "../Dopvol1_A.azi/caxah_dopvol1a_20151209T1650Z.new.h5"
-    REF_H5_FILELIST = "../Dopvol1_A.azi/caxah_dopvol1a_20151209T1650Z.h5"
-    RB5_TARBALL_DOPVOL1A = "../caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
-    RB5_TARBALL_DOPVOL1B = "../caxah_dopvol1b_20151209T1650Z.azi.tar.gz"
-    RB5_TARBALL_DOPVOL1C = "../caxah_dopvol1c_20151209T1650Z.azi.tar.gz"
-    NEW_H5_TARBALL_DOPVOL1A = "../caxah_dopvol1a_20151209T1650Z.azi.new.h5"
-    NEW_H5_TARBALL_DOPVOL1B = "../caxah_dopvol1b_20151209T1650Z.azi.new.h5"
-    NEW_H5_TARBALL_DOPVOL1C = "../caxah_dopvol1c_20151209T1650Z.azi.new.h5"
-    REF_H5_TARBALL_DOPVOL1B = "../caxah_dopvol1b_20151209T1650Z.azi.h5"
-    REF_H5_MERGED_PVOL = "../caxah_dopvol_20151209T1650Z.ref.h5"
-    NEW_H5_MERGED_PVOL = "../caxah_dopvol_20151209T1650Z.vol.new.h5"
-    CASRA_AZI_dBZ = "../CASRA_2017121520051400dBZ.azi.gz"
-    CASRA_AZI = "../CASRA*azi.gz"
-    CASRA_VOL = "../CASRA*vol.gz"
-    CASRA_H5_SCAN = "../CASRA_20171215200514_scan.h5"
-    CASRA_H5_PVOL = "../CASRA_20171215200003_pvol.h5"
+    NEW_H5_FILELIST = "../new/caxah_dopvol1a_20151209T1650Z.by_filelist.new.h5"
+    REF_H5_FILELIST = "../ref/caxah_dopvol1a_20151209T1650Z.by_filelist.ref.h5"
+    RB5_TARBALL_DOPVOL1A = "../org/caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
+    RB5_TARBALL_DOPVOL1B = "../org/caxah_dopvol1b_20151209T1650Z.azi.tar.gz"
+    RB5_TARBALL_DOPVOL1C = "../org/caxah_dopvol1c_20151209T1650Z.azi.tar.gz"
+    NEW_H5_TARBALL_DOPVOL1A = "../new/caxah_dopvol1a_20151209T1650Z.azi.new.h5"
+    NEW_H5_TARBALL_DOPVOL1B = "../new/caxah_dopvol1b_20151209T1650Z.azi.new.h5"
+    NEW_H5_TARBALL_DOPVOL1C = "../new/caxah_dopvol1c_20151209T1650Z.azi.new.h5"
+    REF_H5_TARBALL_DOPVOL1B = "../ref/caxah_dopvol1b_20151209T1650Z.azi.ref.h5"
+    NEW_H5_MERGED_PVOL = "../new/caxah_dopvol_20151209T1650Z.vol.new.h5"
+    REF_H5_MERGED_PVOL = "../ref/caxah_dopvol_20151209T1650Z.vol.ref.h5"
+    CASRA_AZI_dBZ = "../org/CASRA_2017121520051400dBZ.azi.gz"
+    CASRA_AZI = "../org/CASRA*azi.gz"
+    CASRA_VOL = "../org/CASRA*vol.gz"
+    REF_CASRA_H5_SCAN = "../ref/CASRA_20171215200514_scan.ref.h5"
+    REF_CASRA_H5_PVOL = "../ref/CASRA_20171215200003_pvol.ref.h5"
 
     def setUp(self):
         pass
@@ -351,7 +352,7 @@ class rb52odimTest(unittest.TestCase):
     # Somewhat construed way of testing readParameterFiles()
     def testReadParameters(self):
         scan = rb52odim.readParameterFiles([self.CASRA_AZI_dBZ])[0]
-        ref = _raveio.open(self.CASRA_H5_SCAN).object
+        ref = _raveio.open(self.REF_CASRA_H5_SCAN).object
         for pname in ref.getParameterNames():
             if pname != 'DBZH':
                 ref.removeParameter(pname)
@@ -360,13 +361,13 @@ class rb52odimTest(unittest.TestCase):
     def testCompileScanParameters(self):
         scans = rb52odim.readParameterFiles(glob.glob(self.CASRA_AZI))
         oscan = rb52odim.compileScanParameters(scans)
-        ref = _raveio.open(self.CASRA_H5_SCAN).object
+        ref = _raveio.open(self.REF_CASRA_H5_SCAN).object
         validateScan(self, oscan, ref)
 
     def testCompileVolumeFromVolumes(self):
         volumes = rb52odim.readParameterFiles(glob.glob(self.CASRA_VOL))
         ovolume = rb52odim.compileVolumeFromVolumes(volumes)
-        ref = _raveio.open(self.CASRA_H5_PVOL).object
+        ref = _raveio.open(self.REF_CASRA_H5_PVOL).object
         validateTopLevel(self, ovolume, ref)
         for i in range(ovolume.getNumberOfScans()):
             oscan = ovolume.getScan(i)
