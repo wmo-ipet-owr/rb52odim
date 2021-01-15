@@ -134,9 +134,9 @@ def validateMergedPvol(self, new_pvol, iSCAN, ref_RB5_TARBALL):
 
 
 class rb52odimTest(unittest.TestCase):
-    BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol"
-    GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol"
-    GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi"
+    BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol" #volume version="5.22.6"
+    GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol" #volume version="5.43.11"
+    GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi" #volume version="5.43.11"
     NEW_H5_VOL = "../new/2016092614304000dBZ.vol.new.h5"
     NEW_H5_AZI = "../new/2016081612320300dBZ.azi.new.h5"
     REF_H5_VOL = "../ref/2016092614304000dBZ.vol.ref.h5"  # Assumes that these reference files are ODIM compliant
@@ -151,7 +151,7 @@ class rb52odimTest(unittest.TestCase):
         "../org/Dopvol1_A.azi/2015120916500500V.azi",\
         "../org/Dopvol1_A.azi/2015120916500500W.azi",\
         "../org/Dopvol1_A.azi/2015120916500500ZDR.azi"\
-        ]
+        ] #volume version="5.43.10"
     NEW_H5_FILELIST = "../new/caxah_dopvol1a_20151209T1650Z.by_filelist.new.h5"
     REF_H5_FILELIST = "../ref/caxah_dopvol1a_20151209T1650Z.by_filelist.ref.h5"
     RB5_TARBALL_DOPVOL1A = "../org/caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
@@ -163,7 +163,7 @@ class rb52odimTest(unittest.TestCase):
     REF_H5_TARBALL_DOPVOL1B = "../ref/caxah_dopvol1b_20151209T1650Z.azi.ref.h5"
     NEW_H5_MERGED_PVOL = "../new/caxah_dopvol_20151209T1650Z.vol.new.h5"
     REF_H5_MERGED_PVOL = "../ref/caxah_dopvol_20151209T1650Z.vol.ref.h5"
-    CASRA_AZI_dBZ = "../org/CASRA_2017121520051400dBZ.azi.gz"
+    CASRA_AZI_dBZ = "../org/CASRA_2017121520051400dBZ.azi.gz" #volume version="5.51.3"
     CASRA_AZI = "../org/CASRA*azi.gz"
     CASRA_VOL = "../org/CASRA*vol.gz"
     REF_CASRA_H5_SCAN = "../ref/CASRA_20171215200514_scan.ref.h5"
@@ -176,7 +176,6 @@ class rb52odimTest(unittest.TestCase):
         pass
 
     def testWrongInput(self):
-        #2020-Jan-14: isRainbow5() now handles .gz files
         status = _rb52odim.isRainbow5(self.REF_H5_AZI)
         self.assertFalse(status)
 
@@ -186,6 +185,11 @@ class rb52odimTest(unittest.TestCase):
 
     def testIsGoodRB5Input(self):
         status = _rb52odim.isRainbow5(self.GOOD_RB5_VOL)
+        self.assertTrue(status)
+
+    #2020-Jan-14: isRainbow5() now handles .gz files
+    def testIsGoodRB5gzInput(self):
+        status = _rb52odim.isRainbow5(self.CASRA_AZI_dBZ)
         self.assertTrue(status)
 
     def testReadRB5Azi(self):
