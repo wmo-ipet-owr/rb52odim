@@ -176,7 +176,8 @@ class rb52odimTest(unittest.TestCase):
         pass
 
     def testWrongInput(self):
-        status = _rb52odim.isRainbow5(self.CASRA_AZI_dBZ)
+        #2020-Jan-14: isRainbow5() now handles .gz files
+        status = _rb52odim.isRainbow5(self.REF_H5_AZI)
         self.assertFalse(status)
 
     def testIsBadRB5Input(self):
