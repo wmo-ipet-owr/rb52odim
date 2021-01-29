@@ -548,9 +548,7 @@ def compile_big_scan(big_scan,scan,mb):
     return big_scan
 
 def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
-    import numpy as np
-
-    pvol.sortByElevations(True) # resort input
+#    import numpy as np
 
     nSCANs=pvol.getNumberOfScans()
     if big_pvol is None: #clone
@@ -567,7 +565,7 @@ def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
         big_scan=compile_big_scan(big_scan,this_scan,mb)
         big_pvol.removeScan(iSCAN)
         big_pvol.addScan(big_scan)
-        big_pvol.sortByElevations(True) # resort inside scan loop
+        big_pvol.sortByElevations(pvol.isAscendingScans()) # resort inside scan loop to match input pvol order
 
     return big_pvol
 

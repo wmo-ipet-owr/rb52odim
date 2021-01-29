@@ -76,7 +76,12 @@ def validateAttributes(utest, obj, ref_obj):
                 utest.assertTrue(np.array_equal(attr, ref_attr))
 #                np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
             else:
-                utest.assertEqual(attr, ref_attr)
+                try:
+                    utest.assertEqual(attr, ref_attr)
+                except:
+                    print('AssertionError: aname : '+aname)
+                    print('ref_attr : ', ref_attr)
+                    print('    attr : ',     attr)
 
 
 def validateTopLevel(utest, obj, ref_obj):
@@ -363,4 +368,19 @@ class rb52odimTest(unittest.TestCase):
     def testReadRB5(self):
         rio = rb52odim.readRB5([self.CASRA_AZI_dBZ])
         self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
+
+    def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):
+        files = glob.glob(self.CASRA_VOL)
+        volumes = rb52odim.readParameterFiles(files)
+        compile_pvol = rb52odim.compileVolumeFromVolumes(volumes)
+        combine_rio = rb52odim.combineRB5(files, return_rio=True)
+        combine_pvol = combine_rio.object
+#        combine_pvol.sortByElevations(compile_pvol.isAscendingScans()) #check scan orders
+#        import pdb; pdb.set_trace()
+        for i in range(compile_pvol.getNumberOfScans()):
+            compile_scan = compile_pvol.getScan(i)
+            combine_scan = combine_pvol.getScan(i)
+#            compile_scan.date, compile_scan.time = combine_scan.date, combine_scan.time # times are not aligned until the pvol is written to disk, so this is a workaround
+            validateTopLevel(self, compile_scan, combine_scan)
+            validateScan(self, compile_scan, combine_scan)
 

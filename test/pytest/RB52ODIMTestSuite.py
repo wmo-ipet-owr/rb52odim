@@ -41,6 +41,7 @@ if __name__ == '__main__':
 #  suite.addTest(rb52odimTest("testCompileScanParameters"))
 #  suite.addTest(rb52odimTest("testCompileVolumeFromVolumes"))
 #  suite.addTest(rb52odimTest("testMergeOdimScans2Pvol"))
+#  suite.addTest(rb52odimTest("testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO"))
 
 # do all
   suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
