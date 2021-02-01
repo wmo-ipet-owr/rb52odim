@@ -74,7 +74,10 @@ def validateAttributes(utest, obj, ref_obj):
 #            print('    attr : ',     attr)
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
                 utest.assertTrue(np.array_equal(attr, ref_attr))
-#                np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
+#                try: #nicer failure reporting
+#                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
+#                except:
+#                    print('AssertionError: aname : '+aname)
             else:
                 try:
                     utest.assertEqual(attr, ref_attr)
@@ -82,6 +85,7 @@ def validateAttributes(utest, obj, ref_obj):
                     print('AssertionError: aname : '+aname)
                     print('ref_attr : ', ref_attr)
                     print('    attr : ',     attr)
+#                    import pdb; pdb.set_trace()
 
 
 def validateTopLevel(utest, obj, ref_obj):
@@ -370,17 +374,26 @@ class rb52odimTest(unittest.TestCase):
         self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
 
     def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):
-        files = glob.glob(self.CASRA_VOL)
-        volumes = rb52odim.readParameterFiles(files)
-        compile_pvol = rb52odim.compileVolumeFromVolumes(volumes)
-        combine_rio = rb52odim.combineRB5(files, return_rio=True)
+        files = glob.glob(self.CASRA_VOL) #unsorted
+        ifiles = sorted(files, key=lambda s: s.lower())  # case-insensitive sort
+        #need files sorted as rb52odim.readParameterFiles() contains file sorting!
+        volumes = rb52odim.readParameterFiles(ifiles)
+        compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
+        combine_rio = rb52odim.combineRB5(ifiles, return_rio=True) #no adjustTime() functionality
         combine_pvol = combine_rio.object
-#        combine_pvol.sortByElevations(compile_pvol.isAscendingScans()) #check scan orders
 #        import pdb; pdb.set_trace()
+#combine_rio2 = rb52odim.combineRB5(files, return_rio=True) #unsorted
+#combine_rio2.object.getScan(0).getParameterNames()
+#['DBZH', 'RHOHV', 'WRADH', 'UPHIDP', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
+#combine_rio.object.getScan(0).getParameterNames()
+#['DBZH', 'RHOHV', 'UPHIDP', 'WRADH', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
+#compile_pvol.getScan(0).getParameterNames()
+#['DBZH', 'RHOHV', 'UPHIDP', 'WRADH', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
+#for ivol in range(10): print(volumes[ivol].getScan(0).getParameterNames(), volumes[ivol].getScan(0).getAttribute('how/peakpwr')) #TXpower differs by param...
+#        combine_pvol.sortByElevations(compile_pvol.isAscendingScans()) #check scan orders
+        validateTopLevel(self, compile_pvol, combine_pvol)
         for i in range(compile_pvol.getNumberOfScans()):
             compile_scan = compile_pvol.getScan(i)
             combine_scan = combine_pvol.getScan(i)
-#            compile_scan.date, compile_scan.time = combine_scan.date, combine_scan.time # times are not aligned until the pvol is written to disk, so this is a workaround
-            validateTopLevel(self, compile_scan, combine_scan)
             validateScan(self, compile_scan, combine_scan)
 
