@@ -376,21 +376,12 @@ class rb52odimTest(unittest.TestCase):
     def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):
         files = glob.glob(self.CASRA_VOL) #unsorted
         ifiles = sorted(files, key=lambda s: s.lower())  # case-insensitive sort
+        #Note: compiled/combined scan's Attribute('how/peakpwr') is set by first param encountered!
         #need files sorted as rb52odim.readParameterFiles() contains file sorting!
         volumes = rb52odim.readParameterFiles(ifiles)
         compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
         combine_rio = rb52odim.combineRB5(ifiles, return_rio=True) #no adjustTime() functionality
         combine_pvol = combine_rio.object
-#        import pdb; pdb.set_trace()
-#combine_rio2 = rb52odim.combineRB5(files, return_rio=True) #unsorted
-#combine_rio2.object.getScan(0).getParameterNames()
-#['DBZH', 'RHOHV', 'WRADH', 'UPHIDP', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
-#combine_rio.object.getScan(0).getParameterNames()
-#['DBZH', 'RHOHV', 'UPHIDP', 'WRADH', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
-#compile_pvol.getScan(0).getParameterNames()
-#['DBZH', 'RHOHV', 'UPHIDP', 'WRADH', 'PHIDP', 'ZDR', 'KDP', 'SQIH', 'VRADH', 'TH']
-#for ivol in range(10): print(volumes[ivol].getScan(0).getParameterNames(), volumes[ivol].getScan(0).getAttribute('how/peakpwr')) #TXpower differs by param...
-#        combine_pvol.sortByElevations(compile_pvol.isAscendingScans()) #check scan orders
         validateTopLevel(self, compile_pvol, combine_pvol)
         for i in range(compile_pvol.getNumberOfScans()):
             compile_scan = compile_pvol.getScan(i)
