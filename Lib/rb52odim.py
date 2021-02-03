@@ -139,6 +139,9 @@ def compileScanParameters(scans):
             if aname not in anames:
                 oscan.addAttribute(aname, scan.getAttribute(aname))
             
+        #expand TXpower attributes by single- & dual-pol params
+        oscan=expand_txpower_by_pol(oscan,scan,pname)
+
     return oscan
 
 
@@ -296,7 +299,6 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
 
 #        if mb['rb5_ftype'] == "rawdata":
             obj_mb=tar.extractfile(this_member) #EXTRACTED MEMBER OBJECT
-#            import pdb; pdb.set_trace()
 
             rb5_buffer=obj_mb.read() #NOTE: once read(), buffer is detached from obj_mb
             isrb5=_rb52odim.isRainbow5buf(rb5_buffer)
@@ -462,6 +464,7 @@ def parse_tarball_name(fullfile):
         'nam_sdf':nam_sdf\
         }
 
+
 def parse_tarball_member_name(fullfile,ignoredir=False):
     fulldir=os.path.dirname(fullfile)
     basefile=os.path.basename(fullfile).split('_')[-1] #strip 'sSITE_' prefix, not part of tarball member syntax
@@ -522,7 +525,6 @@ def compile_big_scan(big_scan,scan,mb):
 
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
-#    print('sparam',sparam)
 
 
     if big_scan is None:
@@ -538,18 +540,36 @@ def compile_big_scan(big_scan,scan,mb):
         scan.addParameter(param) #add orphan
         sparam=new_sparam #update sparam
 
-#    big_sparam_arr=big_scan.getParameterNames()
-#    print('big_sparam_arr',big_sparam_arr)
-    #WARNING : Different number of rays/bins for various parameters are not allowed (polarscan.c:566)
-    #*** AttributeError: Failed to add parameter to scan
-    #check sorting of scans
     big_scan.addParameter(param) #add
- 
+
+    #expand TXpower attributes by single- & dual-pol params
+    big_scan=expand_txpower_by_pol(big_scan,scan,sparam)
+
     return big_scan
 
-def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
-#    import numpy as np
 
+def expand_txpower_by_pol(oscan,scan,sparam):
+    import re
+    dual_pol_param_list=('ZDR RHOHV PHIDP KDP'    ).split(' ')
+    sing_pol_param_list=('T DBZ VRAD WRAD SNR SQI').split(' ')
+    if      any(re.match('(U)?'+pattern ,sparam) for pattern in dual_pol_param_list) \
+    and not any(re.match(pattern+'(H|V)',sparam) for pattern in sing_pol_param_list):
+        aprefix='dual-pol_'
+    else:
+        aprefix='single-pol_'
+
+    anames = oscan.getAttributeNames()
+    aroot_list=('TXpower peakpwr avgpwr').split(' ')
+    for aroot in aroot_list:
+        org_aname='how/'+aroot
+        new_aname='how/'+aprefix+aroot
+        if new_aname not in anames:
+            oscan.addAttribute(new_aname,scan.getAttribute(org_aname))
+
+    return oscan
+
+
+def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
     nSCANs=pvol.getNumberOfScans()
     if big_pvol is None: #clone
         big_pvol=pvol.clone()
@@ -559,9 +579,7 @@ def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
             big_scan=None #begin with empty scans (removes existing param)
         else:
             big_scan=big_pvol.getScan(iSCAN)
-#            print('big_scan',iSCAN,np.degrees(big_scan.elangle),big_scan.nrays,big_scan.nbins)
         this_scan=pvol.getScan(iSCAN)
-#        print('this_scan',iSCAN,np.degrees(this_scan.elangle),this_scan.nrays,this_scan.nbins)
         big_scan=compile_big_scan(big_scan,this_scan,mb)
         big_pvol.removeScan(iSCAN)
         big_pvol.addScan(big_scan)

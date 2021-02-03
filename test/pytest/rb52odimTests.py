@@ -67,11 +67,8 @@ IGNORE = [
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
         if aname not in IGNORE:
-#            print('aname : '+aname)
             ref_attr = ref_obj.getAttribute(aname)
-#            print('ref_attr : ', ref_attr)
             attr = obj.getAttribute(aname)
-#            print('    attr : ',     attr)
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
                 utest.assertTrue(np.array_equal(attr, ref_attr))
 #                try: #nicer failure reporting
@@ -382,6 +379,8 @@ class rb52odimTest(unittest.TestCase):
         compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
         combine_rio = rb52odim.combineRB5(ifiles, return_rio=True) #no adjustTime() functionality
         combine_pvol = combine_rio.object
+        
+#        import pdb; pdb.set_trace()
         validateTopLevel(self, compile_pvol, combine_pvol)
         for i in range(compile_pvol.getNumberOfScans()):
             compile_scan = compile_pvol.getScan(i)
