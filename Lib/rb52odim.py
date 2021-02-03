@@ -111,7 +111,7 @@ def readParameterFiles(ifiles):
     objects = []
     for ifile in ifiles:
         try: rio = singleRB5(ifile, return_rio=True)
-        except: print "readParameterFiles: failed to read %s" % ifile
+        except: print("readParameterFiles: failed to read %s" % ifile)
         objects.append(rio.object)
     return objects
 
@@ -139,6 +139,9 @@ def compileScanParameters(scans):
             if aname not in anames:
                 oscan.addAttribute(aname, scan.getAttribute(aname))
             
+        #expand TXpower attributes by single- & dual-pol params
+        oscan=expand_txpower_by_pol(oscan,scan,pname)
+
     return oscan
 
 
@@ -197,7 +200,7 @@ def compileVolumeFromScans(scans, adjustTime=True):
     firstscan=False  
     volume = _polarvolume.new()
 
-    #'longitude', 'latitude', 'height', 'time', 'date', 'source'
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth'
 
     for scan in scans:
         if firstscan == False:
@@ -254,16 +257,12 @@ def combineRB5(ifiles, out_fullfile=None, return_rio=False):
         mb=parse_tarball_member_name(inp_fullfile,ignoredir=True)
 
         if mb['rb5_ftype'] == "rawdata":
-            isrb5=_rb52odim.isRainbow5(inp_fullfile)
-            if not isrb5:
-                raise IOError, "%s is not a proper RB5 raw file" % inp_fullfile
+            rio=singleRB5(inp_fullfile, return_rio=True) ## w/ isRainbow5() check and handles .gz
+            this_obj=rio.object
+            if rio.objectType == _rave.Rave_ObjectType_PVOL:
+                big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
             else:
-                rio=_rb52odim.readRB5(inp_fullfile) ## by FILENAME
-                this_obj=rio.object
-                if rio.objectType == _rave.Rave_ObjectType_PVOL:
-                    big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
-                else:
-                    big_obj=compile_big_scan(big_obj,this_obj,mb)
+                big_obj=compile_big_scan(big_obj,this_obj,mb)
     
     container=_raveio.new()
     container.object=big_obj
@@ -308,7 +307,7 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
                 raise IOError, "%s is not a proper RB5 buffer" % rb5_buffer
             else:
                 buffer_len=obj_mb.size
-#                print '### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len)
+#                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
                 rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
                 this_obj=rio.object
 
@@ -388,7 +387,7 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
         else:
             scan=rio.object
             #scan.getAttributeNames()
-            #print scan.getAttribute('how/task')
+            #print(scan.getAttribute('how/task'))
 
             if pvol is None: #clone
                 pvol=_polarvolume.new()
@@ -407,16 +406,22 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
                 pvol.beamwidth=scan.beamwidth
-                sATTRIB='how/task'; pvol.addAttribute(sATTRIB,taskname)
-                sATTRIB='how/TXtype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwH'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwV'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/polmode'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/poltype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/software'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/sw_version'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/system'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/wavelength'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
+
+                pvol.addAttribute("how/task", taskname)
+       		for s_attrib in [
+                    "how/TXtype",
+                    "how/beamwH", #optional
+                    "how/beamwV", #optional
+                    "how/polmode",
+                    "how/poltype",
+                    "how/software",
+                    "how/sw_version",
+                    "how/system",
+                    "how/wavelength",
+                    ]:
+                    if s_attrib in scan.getAttributeNames():
+                        pvol.addAttribute(s_attrib, scan.getAttribute(s_attrib))
+
             pvol.addScan(scan)
 
     container=_raveio.new()
@@ -462,7 +467,7 @@ def parse_tarball_name(fullfile):
 
 def parse_tarball_member_name(fullfile,ignoredir=False):
     fulldir=os.path.dirname(fullfile)
-    basefile=os.path.basename(fullfile)
+    basefile=os.path.basename(fullfile).split('_')[-1] #strip 'sSITE_' prefix, not part of tarball member syntax
     nam_yyyymmddhhmmss=basefile[0:14]
     nam_iso8601=nam_yyyymmddhhmmss[ 0: 4]+'-'+\
                 nam_yyyymmddhhmmss[ 4: 6]+'-'+\
@@ -521,6 +526,7 @@ def compile_big_scan(big_scan,scan,mb):
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
 
+
     if big_scan is None:
         big_scan=scan.clone() #clone
         big_scan.removeParameter(sparam) #remove existing param
@@ -534,13 +540,41 @@ def compile_big_scan(big_scan,scan,mb):
         scan.addParameter(param) #add orphan
         sparam=new_sparam #update sparam
 
+#    big_sparam_arr=big_scan.getParameterNames()
+#    print('big_sparam_arr',big_sparam_arr)
+    #WARNING : Different number of rays/bins for various parameters are not allowed (polarscan.c:566)
+    #*** AttributeError: Failed to add parameter to scan
+    #check sorting of scans
     big_scan.addParameter(param) #add
+
+    #expand TXpower attributes by single- & dual-pol params
+    big_scan=expand_txpower_by_pol(big_scan,scan,sparam)
+
     return big_scan
 
-def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
-    #pvol=_polarvolume.new()
-    #dir(pvol)
 
+def expand_txpower_by_pol(oscan,scan,sparam):
+    import re
+    dual_pol_param_list=('ZDR RHOHV PHIDP KDP'    ).split(' ')
+    sing_pol_param_list=('T DBZ VRAD WRAD SNR SQI').split(' ')
+    if      any(re.match('(U)?'+pattern ,sparam) for pattern in dual_pol_param_list) \
+    and not any(re.match(pattern+'(H|V)',sparam) for pattern in sing_pol_param_list):
+        aprefix='dual-pol_'
+    else:
+        aprefix='single-pol_'
+
+    anames = oscan.getAttributeNames()
+    aroot_list=('TXpower peakpwr avgpwr').split(' ')
+    for aroot in aroot_list:
+        org_aname='how/'+aroot
+        new_aname='how/'+aprefix+aroot
+        if new_aname not in anames:
+            oscan.addAttribute(new_aname,scan.getAttribute(org_aname))
+
+    return oscan
+
+
+def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
     nSCANs=pvol.getNumberOfScans()
     if big_pvol is None: #clone
         big_pvol=pvol.clone()
@@ -554,7 +588,7 @@ def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
         big_scan=compile_big_scan(big_scan,this_scan,mb)
         big_pvol.removeScan(iSCAN)
         big_pvol.addScan(big_scan)
-        big_pvol.sortByElevations(1) # resort
+        big_pvol.sortByElevations(pvol.isAscendingScans()) # resort inside scan loop to match input pvol order
 
     return big_pvol
 
