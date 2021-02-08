@@ -770,7 +770,6 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_ray_angle_end_deg[this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/stopangle"));
         //NOTE: since Rainbow v5.51 (re: CWRRP), pulse width determination via XML tag <pw_index> was replaced by <dynpw>
         static char tmp_a[MAX_STRING]="\0";
-        //attribute check needs comparison to <blank>
         if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(xpathCtx,this_slice,"/dynpw")),"")) {
                rb5_info->slice_pw_index         [this_slice]=0; //radconst now a scalar
                rb5_info->slice_pw_microsec      [this_slice]=atof(tmp_a);
@@ -896,11 +895,12 @@ strRB5_PARAM_INFO get_rb5_param_info(strRB5_INFO *rb5_info, char *xpath_bgn, int
         sprintf(xpath_bgn,"(/volume/scan/slice)[%2d]",this_slice+1);
         strncpy(stmpa,rb5_info->slice_dual_prf_mode[this_slice]+strlen("SdfDPrfMode"),3);
         stmpa[3]='\0'; //add NULL terminator
-        fprintf(stdout,"%s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %7.3f sec)",
+        fprintf(stdout,"%s @ %05.2f deg, %5.3f km_res, %4.2f deg_res, %3.1f µs pulse, %4ld samples, PRF(%3s)=%4.0f/%4.0f (%s to %s, %7.3f sec)",
             xpath_bgn,
             rb5_info->angle_deg_arr[this_slice],
             rb5_info->slice_bin_range_res_km[this_slice],
             rb5_info->slice_ray_angle_res_deg[this_slice],
+            rb5_info->slice_pw_microsec[this_slice],
             rb5_info->slice_num_samples[this_slice],
             stmpa,
             rb5_info->slice_hi_prf[this_slice],
