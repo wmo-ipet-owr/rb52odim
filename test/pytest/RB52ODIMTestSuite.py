@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
   # do only this one test
   suite = unittest.TestSuite()
+#  suite.addTest(rb52odimTest("testSingleRB5Azi"))
 #  suite.addTest(rb52odimTest("testSingleRB5Vol"))
 #  suite.addTest(rb52odimTest("testCombineRB5Files"))
 #  suite.addTest(rb52odimTest("testCombineRB5FromTarball"))
