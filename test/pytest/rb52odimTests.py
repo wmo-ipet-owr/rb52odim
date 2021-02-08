@@ -78,11 +78,12 @@ def validateAttributes(utest, obj, ref_obj):
             else:
                 try:
                     utest.assertEqual(attr, ref_attr)
-                except:
+                except AssertionError, e:
                     print('AssertionError: aname : '+aname)
                     print('ref_attr : ', ref_attr)
                     print('    attr : ',     attr)
 #                    import pdb; pdb.set_trace()
+#                    utest.fail(str(e))
 
 
 def validateTopLevel(utest, obj, ref_obj):
