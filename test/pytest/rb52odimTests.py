@@ -78,7 +78,7 @@ def validateAttributes(utest, obj, ref_obj):
             else:
                 try:
                     utest.assertEqual(attr, ref_attr)
-                except AssertionError, e:
+                except AssertionError as e:
                     print('AssertionError: aname : '+aname)
                     print('ref_attr : ', ref_attr)
                     print('    attr : ',     attr)
