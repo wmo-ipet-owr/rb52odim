@@ -43,16 +43,17 @@ ACQUISITION_UPDATE_TIME = 6  # minutes
 # @param string input file name
 def validate(filename):
     if not os.path.isfile(filename):
-        raise IOError, "Input file %s is not a regular file. Bailing ..." % filename
+        raise IOError("Input file %s is not a regular file. Bailing ..." % filename)
     if os.path.getsize(filename) == 0:
-        raise IOError, "%s is zero-length. Bailing ..." % filename
+        raise IOError("%s is zero-length. Bailing ..." % filename)
 
 
 ## Gunzips a (Rainbow5) file
 # @param string input file name, assumed to have trailing .gz
 # @returns string output file name, created by rave_tempfile
 def gunzip(fstr):
-    payload = gzip.open(fstr).read()
+    #py3 type(payload) is <class 'bytes'>, need to add 'b' read/write mode
+    payload = gzip.open(fstr,'rb').read()
     fstr = rave_tempfile.mktemp(close='True')[1]
     fd = open(fstr, 'w')
     fd.write(payload)
@@ -87,7 +88,7 @@ def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
         inp_fullfile = gunzip(inp_fullfile)
         TMPFILE = True
     if not _rb52odim.isRainbow5(inp_fullfile):
-        raise IOError, "%s is not a proper RB5 raw file" % orig_ifile
+        raise IOError("%s is not a proper RB5 raw file" % orig_ifile)
     rio = _rb52odim.readRB5(inp_fullfile)
     if TMPFILE: os.remove(inp_fullfile)
 
@@ -195,12 +196,13 @@ def compileVolumeFromVolumes(volumes, adjustTime=True):
 # @return PolarVolumeCore object
 def compileVolumeFromScans(scans, adjustTime=True):
     if len(scans) <= 0:
-        raise AttributeError, "Volume must consist of at least 1 scan"
+        raise AttributeError("Volume must consist of at least 1 scan")
 
     firstscan=False  
     volume = _polarvolume.new()
 
-    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth'
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth', 'beamwH', beamwV'
+    #rave-py3/modules/pypolarscan.c:1712 beamwidth - DEPRECATED, Use beamwH!
 
     for scan in scans:
         if firstscan == False:
@@ -209,6 +211,8 @@ def compileVolumeFromScans(scans, adjustTime=True):
             volume.latitude = scan.latitude
             volume.height = scan.height
             volume.beamwidth = scan.beamwidth
+            if(hasattr(scan,'beamH')): volume.beamwH = scan.beamwH
+            if(hasattr(scan,'beamV')): volume.beamwV = scan.beamwV
         volume.addScan(scan)
 
     volume.source = scan.source  # Recycle the last input, it won't necessarily be correct ...
@@ -303,7 +307,7 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
             rb5_buffer=obj_mb.read() #NOTE: once read(), buffer is detached from obj_mb
             isrb5=_rb52odim.isRainbow5buf(rb5_buffer)
             if not isrb5:
-                raise IOError, "%s is not a proper RB5 buffer" % rb5_buffer
+                raise IOError("%s is not a proper RB5 buffer" % rb5_buffer)
             else:
                 buffer_len=obj_mb.size
 #                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
@@ -382,11 +386,12 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
         rio=rio_arr[iSCAN]
 
         if rio.objectType != _rave.Rave_ObjectType_SCAN:
-            raise IOError, "Expecting obj_SCAN not : %s" % type(rio.object)
+            raise IOError("Expecting obj_SCAN not : %s" % type(rio.object))
         else:
             scan=rio.object
             #scan.getAttributeNames()
             #print(scan.getAttribute('how/task'))
+            #import pdb; pdb.set_trace()
 
             if pvol is None: #clone
                 pvol=_polarvolume.new()
@@ -404,13 +409,16 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.longitude=scan.longitude
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
+                #rave-py3/modules/pypolarscan.c:1712 beamwidth - DEPRECATED, Use beamwH!
                 pvol.beamwidth=scan.beamwidth
+                if(hasattr(scan,'beamH')): pvol.beamwH = scan.beamwH
+                if(hasattr(scan,'beamV')): pvol.beamwV = scan.beamwV
 
                 pvol.addAttribute("how/task", taskname)
-       		for s_attrib in [
+                for s_attrib in [
                     "how/TXtype",
-                    "how/beamwH", #optional
-                    "how/beamwV", #optional
+#not in REF                    "how/beamwH", #optional
+#not in REF                    "how/beamwV", #optional
                     "how/polmode",
                     "how/poltype",
                     "how/software",
@@ -520,7 +528,7 @@ def compile_big_scan(big_scan,scan,mb):
     sparam_arr=scan.getParameterNames()
     #assume 1 param per scan of input tar_member
     if len(sparam_arr) != 1 :
-        raise IOError, 'Too many sparams: %s' % sparam_arr
+        raise IOError('Too many sparams: %s' % sparam_arr)
         return
 
     sparam=sparam_arr[0]
