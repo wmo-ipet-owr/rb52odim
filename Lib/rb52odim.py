@@ -55,7 +55,7 @@ def gunzip(fstr):
     #py3 type(payload) is <class 'bytes'>, need to add 'b' read/write mode
     payload = gzip.open(fstr,'rb').read()
     fstr = rave_tempfile.mktemp(close='True')[1]
-    fd = open(fstr, 'w')
+    fd = open(fstr, 'wb')
     fd.write(payload)
     fd.close()
     return fstr
@@ -309,9 +309,9 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
             if not isrb5:
                 raise IOError("%s is not a proper RB5 buffer" % rb5_buffer)
             else:
-                buffer_len=obj_mb.size
+                buffer_len=len(rb5_buffer)
 #                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
-                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
+                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,buffer_len) ## by BUFFER
                 this_obj=rio.object
 
                 if rio.objectType == _rave.Rave_ObjectType_PVOL:
