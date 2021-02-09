@@ -46,12 +46,14 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 #define L_RB52ODIM_DEBUG 0
 
 #define L_RAVE_PY3 0
+#if L_RAVE_PY3 == 0
 //for forward compatibility, from rave-py3/include/polarvolume.h
 void PolarVolume_setBeamwH(PolarVolume_t* self, double beamwidth);
 void PolarVolume_setBeamwV(PolarVolume_t* self, double beamwidth);
 //for forward compatibility, from rave-py3/include/polarvolume.h
 void PolarScan_setBeamwH(PolarScan_t* scan, double beamwidth);
 void PolarScan_setBeamwV(PolarScan_t* scan, double beamwidth);
+#endif
 
 //function declarations from "rb52odim.c"
 int objectTypeFromRB5(strRB5_INFO rb5_info);
