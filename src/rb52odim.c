@@ -398,8 +398,8 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     printf("%s: %s = %s\n",rb5_info->sensor_id,attrib_name,attrib_value);
 */
 
-    // Rainbow should be configured with a unique 3-char id
-    sprintf(xpath_bgn,"(/table/radar)[*][@id='%s']",rb5_info->sensor_id);
+    // Rainbow should be configured with a unique 5- or 3-char id
+    sprintf(xpath_bgn,"(/table/radar)[*][@id='%.5s']",rb5_info->sensor_id);
     if (return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state")) != NULL) {
         sprintf(tmp_a,"NOD:%s,PLC:%s %s",
             return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
@@ -413,23 +413,27 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
             );
     }
     if(L_RB52ODIM_DEBUG) printf("\n%s: odim_source = %s\n",rb5_info->sensor_id,tmp_a);
-    if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
+    if(RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
       PolarVolume_setDate     ((PolarVolume_t*)object,func_iso8601_2_yyyymmdd(iso8601));
       PolarVolume_setTime     ((PolarVolume_t*)object,func_iso8601_2_hhmmss(iso8601));
       PolarVolume_setSource   ((PolarVolume_t*)object,tmp_a);
       PolarVolume_setLongitude((PolarVolume_t*)object,rb5_info->sensor_lon_deg*DEG_TO_RAD);
       PolarVolume_setLatitude ((PolarVolume_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarVolume_setHeight   ((PolarVolume_t*)object,rb5_info->sensor_alt_m); //m_asl
-//      //rave-py3: _setBeamwidth() will populate beamwH attrib
-      PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
-//      //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
-//      //rave-py3: new _setBeamwH/V() methods
-//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
-//        PolarVolume_setBeamwH((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
-//      }
-//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
-//        PolarVolume_setBeamwV((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
-//      }
+      if(L_RAVE_PY3){
+        //rave-py3: _setBeamwidth() will populate beamwH attrib
+        PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+        //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
+        //rave-py3: new _setBeamwH/V() methods
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
+          PolarVolume_setBeamwH((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
+        }
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
+          PolarVolume_setBeamwV((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
+        }
+      } else { //L_RAVE_PY3
+        PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+      } // L_RAVE_PY3
     } else {
       PolarScan_setDate     ((PolarScan_t*)object,func_iso8601_2_yyyymmdd(iso8601));
       PolarScan_setTime     ((PolarScan_t*)object,func_iso8601_2_hhmmss(iso8601));
@@ -437,15 +441,19 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
       PolarScan_setLongitude((PolarScan_t*)object,rb5_info->sensor_lon_deg*DEG_TO_RAD);
       PolarScan_setLatitude ((PolarScan_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarScan_setHeight   ((PolarScan_t*)object,rb5_info->sensor_alt_m); //m_asl
-//      //rave-py3: _setBeamwidth() will populate beamwH attrib
-      PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
-//      //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
-//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
-//        PolarScan_setBeamwH((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
-//      }
-//      if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
-//        PolarScan_setBeamwV((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
-//      }
+      if(L_RAVE_PY3){
+        //rave-py3: _setBeamwidth() will populate beamwH attrib
+        PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+        //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
+          PolarScan_setBeamwH((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
+        }
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
+          PolarScan_setBeamwV((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
+        }
+      } else { //L_RAVE_PY3
+        PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
+      } // L_RAVE_PY3
     }
 
     //#############################################################################//
@@ -496,9 +504,12 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
     if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ,"")) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
     if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ,"")) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
-//rave-py3:  for beamwH/V, these 2 generic attribs now part of Polar{Volume/Scan} struct (see above for method() use)
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
+    if(L_RAVE_PY3){
+        //rave-py3:  for beamwH/V, these 2 generic attribs now part of Polar{Volume/Scan} struct (see above for method() use)
+    } else { //L_RAVE_PY3
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
+    } //L_RAVE_PY3
 //  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
 
     // NOTE, rest set at SCAN level: rpm, prf's pw, Nyquist, noise_power_dbz, nsamples
