@@ -45,8 +45,9 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 
 #define L_RB52ODIM_DEBUG 0
 
-#define L_RAVE_PY3 0
-#if L_RAVE_PY3 == 0
+#include "Python.h" //$RAVEROOT/rave/mkf/def.mk defines $INCLUDE_PYTHON envvar
+#define L_RAVE_PY3 (PY_MAJOR_VERSION >= 3)
+#if !(L_RAVE_PY3)
 //for forward compatibility, from rave-py3/include/polarvolume.h
 void PolarVolume_setBeamwH(PolarVolume_t* self, double beamwidth);
 void PolarVolume_setBeamwV(PolarVolume_t* self, double beamwidth);
