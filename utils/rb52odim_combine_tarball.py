@@ -74,7 +74,7 @@ def combine(options):
                 exit()
             else:
                 buffer_len=obj_mb.size
-                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ### by BUFFER
+                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,buffer_len) ### by BUFFER
 #                rio=_rb52odim.readRB5(inp_fullfile) ## by FILENAME
                 this_obj=rio.object
 #                print(type(this_obj))

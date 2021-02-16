@@ -49,6 +49,7 @@ def combine(options):
             scan=rio.object
             #scan.getAttributeNames()
             #print scan.getAttribute('how/task')
+            #import pdb; pdb.set_trace()
 
             if pvol is None: #clone
                 pvol=_polarvolume.new()
@@ -60,20 +61,22 @@ def combine(options):
                 cycle_nsecs=float(options.interval)*60.
                 cycle_systime=scan_systime - scan_systime%cycle_nsecs
                 cycle_iso8601=dt.datetime.fromtimestamp(cycle_systime).isoformat()
-#                import pdb; pdb.set_trace()
 
                 pvol.date=''.join(cycle_iso8601[:10].split('-'))
                 pvol.time=''.join(cycle_iso8601[11:].split(':'))
                 pvol.longitude=scan.longitude
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
+                #rave-py3/modules/pypolarscan.c:1712 beamwidth - DEPRECATED, Use beamwH!
                 pvol.beamwidth=scan.beamwidth
+                if(hasattr(scan,'beamH')): pvol.beamwH = scan.beamwH
+                if(hasattr(scan,'beamV')): pvol.beamwV = scan.beamwV
 
                 pvol.addAttribute("how/task", options.taskname)
                 for s_attrib in [
                     "how/TXtype",
-                    "how/beamwH", #optional
-                    "how/beamwV", #optional
+#not in REF                    "how/beamwH", #optional
+#not in REF                    "how/beamwV", #optional
                     "how/polmode",
                     "how/poltype",
                     "how/software",
