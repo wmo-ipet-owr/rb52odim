@@ -33,9 +33,9 @@ import _rb52odim, rb52odim
 import numpy as np
 
 # see http://git.baltrad.eu/git/?p=rave.git;a=blob_plain;f=modules/rave.c
-_rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
+#_rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
 #_rave.setDebugLevel(_rave.Debug_RAVE_DEBUG)
-#_rave.setDebugLevel(_rave.Debug_RAVE_WARNING)
+_rave.setDebugLevel(_rave.Debug_RAVE_WARNING) #turns off rave_hlhdf_utilities INFO : Adding group: how
 
 ## Helper functions for ODIM validation below. For some reason, unit test
 #  objects can't pass tests to methods, but they can be passed to functions.
