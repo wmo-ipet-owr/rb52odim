@@ -37,6 +37,7 @@ if __name__ == '__main__':
   suite = unittest.TestSuite()
 #  suite.addTest(rb52odimTest("testSingleRB5Azi"))
 #  suite.addTest(rb52odimTest("testSingleRB5Vol"))
+#  suite.addTest(rb52odimTest("testReadParameters"))
 #  suite.addTest(rb52odimTest("testCombineRB5Files"))
 #  suite.addTest(rb52odimTest("testCombineRB5FromTarball"))
 #  suite.addTest(rb52odimTest("testCompileScanParameters"))
