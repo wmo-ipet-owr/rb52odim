@@ -139,6 +139,9 @@ def compileScanParameters(scans):
             if aname not in anames:
                 oscan.addAttribute(aname, scan.getAttribute(aname))
             
+        #expand TXpower attributes by single- & dual-pol params
+        oscan=expand_txpower_by_pol(oscan,scan,pname)
+
     return oscan
 
 
@@ -525,6 +528,7 @@ def compile_big_scan(big_scan,scan,mb):
 #    print('sparam',sparam)
 
 
+
     if big_scan is None:
         big_scan=scan.clone() #clone
         big_scan.removeParameter(sparam) #remove existing param
@@ -544,12 +548,36 @@ def compile_big_scan(big_scan,scan,mb):
     #*** AttributeError: Failed to add parameter to scan
     #check sorting of scans
     big_scan.addParameter(param) #add
- 
+
+    #expand TXpower attributes by single- & dual-pol params
+    big_scan=expand_txpower_by_pol(big_scan,scan,sparam)
+
     return big_scan
 
 def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
-#    import numpy as np
 
+def expand_txpower_by_pol(oscan,scan,sparam):
+    import re
+    dual_pol_param_list=('ZDR RHOHV PHIDP KDP'    ).split(' ')
+    sing_pol_param_list=('T DBZ VRAD WRAD SNR SQI').split(' ')
+    if      any(re.match('(U)?'+pattern ,sparam) for pattern in dual_pol_param_list) \
+    and not any(re.match(pattern+'(H|V)',sparam) for pattern in sing_pol_param_list):
+        aprefix='dual-pol_'
+    else:
+        aprefix='single-pol_'
+
+    anames = oscan.getAttributeNames()
+    aroot_list=('TXpower peakpwr avgpwr').split(' ')
+    for aroot in aroot_list:
+        org_aname='how/'+aroot
+        new_aname='how/'+aprefix+aroot
+        if new_aname not in anames:
+            oscan.addAttribute(new_aname,scan.getAttribute(org_aname))
+
+    return oscan
+
+
+def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
     nSCANs=pvol.getNumberOfScans()
     if big_pvol is None: #clone
         big_pvol=pvol.clone()

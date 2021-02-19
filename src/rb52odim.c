@@ -257,6 +257,12 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
 	    ret = addDoubleAttribute(object, "how/peakpwr",     data_arr[iray_peak_pwr]/1000.); //[kW]
         ret = addDoubleAttribute(object, "how/avgpwr",      avg_pwr); //[W]
 
+        if(is_rb5_param_dualpol(rb5_param.sparam)) {
+            ret = addStringAttribute(object, "how/pol_of_txpower","dual");
+        } else {
+            ret = addStringAttribute(object, "how/pol_of_txpower","single");
+        }
+
         if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
         if (data_arr != NULL ) RAVE_FREE(data_arr);
     }

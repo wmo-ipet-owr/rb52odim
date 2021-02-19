@@ -67,11 +67,8 @@ IGNORE = [
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
         if aname not in IGNORE:
-#            print('aname : '+aname)
             ref_attr = ref_obj.getAttribute(aname)
-#            print('ref_attr : ', ref_attr)
             attr = obj.getAttribute(aname)
-#            print('    attr : ',     attr)
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
                 utest.assertTrue(np.array_equal(attr, ref_attr))
 #                try: #nicer failure reporting
@@ -375,6 +372,7 @@ class rb52odimTest(unittest.TestCase):
     def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):
         files = glob.glob(self.CASRA_VOL) #unsorted
         ifiles = sorted(files, key=lambda s: s.lower())  # case-insensitive sort
+        #Note: compiled/combined scan's Attribute('how/peakpwr') is set by first param encountered!
         #need files sorted as rb52odim.readParameterFiles() contains file sorting!
         volumes = rb52odim.readParameterFiles(ifiles)
         compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
