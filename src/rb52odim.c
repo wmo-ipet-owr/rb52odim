@@ -699,30 +699,36 @@ int isRainbow5buf(char **inp_buffer) {
 /*
  * Verifies it is an RB5 raw file and of the compatible version.
  */
+//2021-Jan-14: Added gzopen() & gzclose() handling
 int isRainbow5(const char* inp_fname) {
 
 //	int RETURN_yes = 0;
 	int RETURN_no = -1;
 
-    FILE *fp = NULL;
-    fp = fopen(inp_fname, "r");
+    gzFile fp = NULL;
+    fp = gzopen(inp_fname, "r");
     if (NULL == fp) {
-        fprintf(stderr,"Error while opening file = %s\n", inp_fname);
+        fprintf (stderr, "gzopen of '%s' failed: %s.\n", inp_fname, strerror (errno));
         return RETURN_no;
     }
 
     char *line=NULL;
-    size_t len=0;
-    getline(&line,&len,fp);
-    fclose(fp);
+    static const unsigned BUFLEN = 1024;
+    char buf[BUFLEN];
+    line=gzgets(fp,buf,sizeof(buf));
+    size_t len=strlen(line);
+    gzclose(fp);
 
-    //Note, trailing '\n' kept for subsequent proper header line extraction in isRainbow5buf()
-//    line[strlen(line)-1]='\0'; //trim trailing <LF>
-//    fprintf(stdout,"line : %s\n",line);
+    //Note, gzgets() strips trailing '\n', old method non-gz getline() kept it
+    //trailing \'n' needed for subsequent proper header line extraction in isRainbow5buf()
+    len+=1;
+    char *test_line=malloc(len); //extend to restore trailing '/n'
+    strcpy(test_line,line);
+    strcat(test_line,"\n");
+//    fprintf(stdout,"test_line : %s\n",test_line);
 
-    int RETURN_val=isRainbow5buf(&line);
-    free(line);
-    //RAVE_FREE(line);
+    int RETURN_val=isRainbow5buf(&test_line);
+    free(test_line);
     return RETURN_val;
 }
 
