@@ -197,7 +197,7 @@ def compileVolumeFromScans(scans, adjustTime=True):
     firstscan=False  
     volume = _polarvolume.new()
 
-    #'longitude', 'latitude', 'height', 'time', 'date', 'source'
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth'
 
     for scan in scans:
         if firstscan == False:
@@ -254,16 +254,12 @@ def combineRB5(ifiles, out_fullfile=None, return_rio=False):
         mb=parse_tarball_member_name(inp_fullfile,ignoredir=True)
 
         if mb['rb5_ftype'] == "rawdata":
-            isrb5=_rb52odim.isRainbow5(inp_fullfile)
-            if not isrb5:
-                raise IOError, "%s is not a proper RB5 raw file" % inp_fullfile
+            rio=singleRB5(inp_fullfile, return_rio=True) ## w/ isRainbow5() check and handles .gz
+            this_obj=rio.object
+            if rio.objectType == _rave.Rave_ObjectType_PVOL:
+                big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
             else:
-                rio=_rb52odim.readRB5(inp_fullfile) ## by FILENAME
-                this_obj=rio.object
-                if rio.objectType == _rave.Rave_ObjectType_PVOL:
-                    big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
-                else:
-                    big_obj=compile_big_scan(big_obj,this_obj,mb)
+                big_obj=compile_big_scan(big_obj,this_obj,mb)
     
     container=_raveio.new()
     container.object=big_obj
@@ -407,16 +403,22 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
                 pvol.beamwidth=scan.beamwidth
-                sATTRIB='how/task'; pvol.addAttribute(sATTRIB,taskname)
-                sATTRIB='how/TXtype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwH'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/beamwV'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/polmode'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/poltype'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/software'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/sw_version'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/system'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
-                sATTRIB='how/wavelength'; pvol.addAttribute(sATTRIB,scan.getAttribute(sATTRIB))
+
+                pvol.addAttribute("how/task", taskname)
+       		for s_attrib in [
+                    "how/TXtype",
+                    "how/beamwH", #optional
+                    "how/beamwV", #optional
+                    "how/polmode",
+                    "how/poltype",
+                    "how/software",
+                    "how/sw_version",
+                    "how/system",
+                    "how/wavelength",
+                    ]:
+                    if s_attrib in scan.getAttributeNames():
+                        pvol.addAttribute(s_attrib, scan.getAttribute(s_attrib))
+
             pvol.addScan(scan)
 
     container=_raveio.new()
