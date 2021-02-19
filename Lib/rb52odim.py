@@ -201,7 +201,8 @@ def compileVolumeFromScans(scans, adjustTime=True):
     firstscan=False  
     volume = _polarvolume.new()
 
-    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth'
+    #'longitude', 'latitude', 'height', 'time', 'date', 'source', 'beamwidth', 'beamwH', beamwV'
+    #rave-py3/modules/pypolarscan.c:1712 beamwidth - DEPRECATED, Use beamwH!
 
     for scan in scans:
         if firstscan == False:
@@ -210,6 +211,8 @@ def compileVolumeFromScans(scans, adjustTime=True):
             volume.latitude = scan.latitude
             volume.height = scan.height
             volume.beamwidth = scan.beamwidth
+            if(hasattr(scan,'beamH')): volume.beamwH = scan.beamwH
+            if(hasattr(scan,'beamV')): volume.beamwV = scan.beamwV
         volume.addScan(scan)
 
     volume.source = scan.source  # Recycle the last input, it won't necessarily be correct ...
@@ -405,7 +408,10 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 pvol.longitude=scan.longitude
                 pvol.latitude=scan.latitude
                 pvol.height=scan.height
+                #rave-py3/modules/pypolarscan.c:1712 beamwidth - DEPRECATED, Use beamwH!
                 pvol.beamwidth=scan.beamwidth
+                if(hasattr(scan,'beamH')): pvol.beamwH = scan.beamwH
+                if(hasattr(scan,'beamV')): pvol.beamwV = scan.beamwV
 
                 pvol.addAttribute("how/task", taskname)
        		for s_attrib in [
@@ -527,6 +533,7 @@ def compile_big_scan(big_scan,scan,mb):
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
 #    print('sparam',sparam)
+
 
 
 
