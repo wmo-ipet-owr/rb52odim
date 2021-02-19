@@ -43,18 +43,19 @@ ACQUISITION_UPDATE_TIME = 6  # minutes
 # @param string input file name
 def validate(filename):
     if not os.path.isfile(filename):
-        raise IOError, "Input file %s is not a regular file. Bailing ..." % filename
+        raise IOError("Input file %s is not a regular file. Bailing ..." % filename)
     if os.path.getsize(filename) == 0:
-        raise IOError, "%s is zero-length. Bailing ..." % filename
+        raise IOError("%s is zero-length. Bailing ..." % filename)
 
 
 ## Gunzips a (Rainbow5) file
 # @param string input file name, assumed to have trailing .gz
 # @returns string output file name, created by rave_tempfile
 def gunzip(fstr):
-    payload = gzip.open(fstr).read()
+    #py3 type(payload) is <class 'bytes'>, need to add 'b' read/write mode
+    payload = gzip.open(fstr,'rb').read()
     fstr = rave_tempfile.mktemp(close='True')[1]
-    fd = open(fstr, 'w')
+    fd = open(fstr, 'wb')
     fd.write(payload)
     fd.close()
     return fstr
@@ -87,7 +88,7 @@ def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
         inp_fullfile = gunzip(inp_fullfile)
         TMPFILE = True
     if not _rb52odim.isRainbow5(inp_fullfile):
-        raise IOError, "%s is not a proper RB5 raw file" % orig_ifile
+        raise IOError("%s is not a proper RB5 raw file" % orig_ifile)
     rio = _rb52odim.readRB5(inp_fullfile)
     if TMPFILE: os.remove(inp_fullfile)
 
@@ -195,7 +196,7 @@ def compileVolumeFromVolumes(volumes, adjustTime=True):
 # @return PolarVolumeCore object
 def compileVolumeFromScans(scans, adjustTime=True):
     if len(scans) <= 0:
-        raise AttributeError, "Volume must consist of at least 1 scan"
+        raise AttributeError("Volume must consist of at least 1 scan")
 
     firstscan=False  
     volume = _polarvolume.new()
@@ -299,16 +300,15 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
 
 #        if mb['rb5_ftype'] == "rawdata":
             obj_mb=tar.extractfile(this_member) #EXTRACTED MEMBER OBJECT
-#            import pdb; pdb.set_trace()
 
             rb5_buffer=obj_mb.read() #NOTE: once read(), buffer is detached from obj_mb
             isrb5=_rb52odim.isRainbow5buf(rb5_buffer)
             if not isrb5:
-                raise IOError, "%s is not a proper RB5 buffer" % rb5_buffer
+                raise IOError("%s is not a proper RB5 buffer" % rb5_buffer)
             else:
-                buffer_len=obj_mb.size
+                buffer_len=len(rb5_buffer)
 #                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
-                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
+                rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,buffer_len) ## by BUFFER
                 this_obj=rio.object
 
                 if rio.objectType == _rave.Rave_ObjectType_PVOL:
@@ -383,7 +383,7 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
         rio=rio_arr[iSCAN]
 
         if rio.objectType != _rave.Rave_ObjectType_SCAN:
-            raise IOError, "Expecting obj_SCAN not : %s" % type(rio.object)
+            raise IOError("Expecting obj_SCAN not : %s" % type(rio.object))
         else:
             scan=rio.object
             #scan.getAttributeNames()
@@ -465,6 +465,7 @@ def parse_tarball_name(fullfile):
         'nam_sdf':nam_sdf\
         }
 
+
 def parse_tarball_member_name(fullfile,ignoredir=False):
     fulldir=os.path.dirname(fullfile)
     basefile=os.path.basename(fullfile).split('_')[-1] #strip 'sSITE_' prefix, not part of tarball member syntax
@@ -520,12 +521,13 @@ def compile_big_scan(big_scan,scan,mb):
     sparam_arr=scan.getParameterNames()
     #assume 1 param per scan of input tar_member
     if len(sparam_arr) != 1 :
-        raise IOError, 'Too many sparams: %s' % sparam_arr
+        raise IOError('Too many sparams: %s' % sparam_arr)
         return
 
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
 #    print('sparam',sparam)
+
 
 
 
@@ -554,7 +556,6 @@ def compile_big_scan(big_scan,scan,mb):
 
     return big_scan
 
-def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
 
 def expand_txpower_by_pol(oscan,scan,sparam):
     import re
