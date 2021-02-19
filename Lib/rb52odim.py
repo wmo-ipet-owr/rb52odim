@@ -111,7 +111,7 @@ def readParameterFiles(ifiles):
     objects = []
     for ifile in ifiles:
         try: rio = singleRB5(ifile, return_rio=True)
-        except: print "readParameterFiles: failed to read %s" % ifile
+        except: print("readParameterFiles: failed to read %s" % ifile)
         objects.append(rio.object)
     return objects
 
@@ -304,7 +304,7 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
                 raise IOError, "%s is not a proper RB5 buffer" % rb5_buffer
             else:
                 buffer_len=obj_mb.size
-#                print '### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len)
+#                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
                 rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,long(buffer_len)) ## by BUFFER
                 this_obj=rio.object
 
@@ -384,7 +384,7 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
         else:
             scan=rio.object
             #scan.getAttributeNames()
-            #print scan.getAttribute('how/task')
+            #print(scan.getAttribute('how/task'))
 
             if pvol is None: #clone
                 pvol=_polarvolume.new()
@@ -464,7 +464,7 @@ def parse_tarball_name(fullfile):
 
 def parse_tarball_member_name(fullfile,ignoredir=False):
     fulldir=os.path.dirname(fullfile)
-    basefile=os.path.basename(fullfile)
+    basefile=os.path.basename(fullfile).split('_')[-1] #strip 'sSITE_' prefix, not part of tarball member syntax
     nam_yyyymmddhhmmss=basefile[0:14]
     nam_iso8601=nam_yyyymmddhhmmss[ 0: 4]+'-'+\
                 nam_yyyymmddhhmmss[ 4: 6]+'-'+\
@@ -522,6 +522,8 @@ def compile_big_scan(big_scan,scan,mb):
 
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
+#    print('sparam',sparam)
+
 
     if big_scan is None:
         big_scan=scan.clone() #clone
@@ -536,12 +538,17 @@ def compile_big_scan(big_scan,scan,mb):
         scan.addParameter(param) #add orphan
         sparam=new_sparam #update sparam
 
+#    big_sparam_arr=big_scan.getParameterNames()
+#    print('big_sparam_arr',big_sparam_arr)
+    #WARNING : Different number of rays/bins for various parameters are not allowed (polarscan.c:566)
+    #*** AttributeError: Failed to add parameter to scan
+    #check sorting of scans
     big_scan.addParameter(param) #add
+ 
     return big_scan
 
 def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
-    #pvol=_polarvolume.new()
-    #dir(pvol)
+#    import numpy as np
 
     nSCANs=pvol.getNumberOfScans()
     if big_pvol is None: #clone
@@ -552,11 +559,13 @@ def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
             big_scan=None #begin with empty scans (removes existing param)
         else:
             big_scan=big_pvol.getScan(iSCAN)
+#            print('big_scan',iSCAN,np.degrees(big_scan.elangle),big_scan.nrays,big_scan.nbins)
         this_scan=pvol.getScan(iSCAN)
+#        print('this_scan',iSCAN,np.degrees(this_scan.elangle),this_scan.nrays,this_scan.nbins)
         big_scan=compile_big_scan(big_scan,this_scan,mb)
         big_pvol.removeScan(iSCAN)
         big_pvol.addScan(big_scan)
-        big_pvol.sortByElevations(1) # resort
+        big_pvol.sortByElevations(pvol.isAscendingScans()) # resort inside scan loop to match input pvol order
 
     return big_pvol
 

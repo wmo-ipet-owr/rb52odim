@@ -74,9 +74,17 @@ def validateAttributes(utest, obj, ref_obj):
 #            print('    attr : ',     attr)
             if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
                 utest.assertTrue(np.array_equal(attr, ref_attr))
-#                np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
+#                try: #nicer failure reporting
+#                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
+#                except:
+#                    print('AssertionError: aname : '+aname)
             else:
-                utest.assertEqual(attr, ref_attr)
+                try:
+                    utest.assertEqual(attr, ref_attr)
+                except:
+                    print('AssertionError: aname : '+aname)
+                    print('ref_attr : ', ref_attr)
+                    print('    attr : ',     attr)
 
 
 def validateTopLevel(utest, obj, ref_obj):
@@ -134,9 +142,9 @@ def validateMergedPvol(self, new_pvol, iSCAN, ref_RB5_TARBALL):
 
 
 class rb52odimTest(unittest.TestCase):
-    BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol"
-    GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol"
-    GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi"
+    BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol" #volume version="5.22.6"
+    GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol" #volume version="5.43.11"
+    GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi" #volume version="5.43.11"
     NEW_H5_VOL = "../new/2016092614304000dBZ.vol.new.h5"
     NEW_H5_AZI = "../new/2016081612320300dBZ.azi.new.h5"
     REF_H5_VOL = "../ref/2016092614304000dBZ.vol.ref.h5"  # Assumes that these reference files are ODIM compliant
@@ -151,7 +159,7 @@ class rb52odimTest(unittest.TestCase):
         "../org/Dopvol1_A.azi/2015120916500500V.azi",\
         "../org/Dopvol1_A.azi/2015120916500500W.azi",\
         "../org/Dopvol1_A.azi/2015120916500500ZDR.azi"\
-        ]
+        ] #volume version="5.43.10"
     NEW_H5_FILELIST = "../new/caxah_dopvol1a_20151209T1650Z.by_filelist.new.h5"
     REF_H5_FILELIST = "../ref/caxah_dopvol1a_20151209T1650Z.by_filelist.ref.h5"
     RB5_TARBALL_DOPVOL1A = "../org/caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
@@ -163,7 +171,7 @@ class rb52odimTest(unittest.TestCase):
     REF_H5_TARBALL_DOPVOL1B = "../ref/caxah_dopvol1b_20151209T1650Z.azi.ref.h5"
     NEW_H5_MERGED_PVOL = "../new/caxah_dopvol_20151209T1650Z.vol.new.h5"
     REF_H5_MERGED_PVOL = "../ref/caxah_dopvol_20151209T1650Z.vol.ref.h5"
-    CASRA_AZI_dBZ = "../org/CASRA_2017121520051400dBZ.azi.gz"
+    CASRA_AZI_dBZ = "../org/CASRA_2017121520051400dBZ.azi.gz" #volume version="5.51.3"
     CASRA_AZI = "../org/CASRA*azi.gz"
     CASRA_VOL = "../org/CASRA*vol.gz"
     REF_CASRA_H5_SCAN = "../ref/CASRA_20171215200514_scan.ref.h5"
@@ -363,4 +371,18 @@ class rb52odimTest(unittest.TestCase):
     def testReadRB5(self):
         rio = rb52odim.readRB5([self.CASRA_AZI_dBZ])
         self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
+
+    def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):
+        files = glob.glob(self.CASRA_VOL) #unsorted
+        ifiles = sorted(files, key=lambda s: s.lower())  # case-insensitive sort
+        #need files sorted as rb52odim.readParameterFiles() contains file sorting!
+        volumes = rb52odim.readParameterFiles(ifiles)
+        compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
+        combine_rio = rb52odim.combineRB5(ifiles, return_rio=True) #no adjustTime() functionality
+        combine_pvol = combine_rio.object
+        validateTopLevel(self, compile_pvol, combine_pvol)
+        for i in range(compile_pvol.getNumberOfScans()):
+            compile_scan = compile_pvol.getScan(i)
+            combine_scan = combine_pvol.getScan(i)
+            validateScan(self, compile_scan, combine_scan)
 
