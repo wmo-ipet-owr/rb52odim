@@ -43,6 +43,8 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 #include <ctype.h> //for tolower() & isalnum()
 #include <sys/stat.h> //stat()
 
+#include <math.h> //log10()
+
 #define L_RB52ODIM_DEBUG 0
 
 //function declarations from "rb52odim.c"
