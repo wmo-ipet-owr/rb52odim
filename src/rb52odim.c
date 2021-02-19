@@ -215,8 +215,8 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
 	ret = addStringAttribute(object, "how/clutterMap",  "Off"); // (not used)
 
 // NOTE: these attributes may not exist in the original RB5 raw file, thus check
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
 
 //	ret = addDoubleAttribute(object, "how/nsampleH",    ); // n/a
 //	ret = addDoubleAttribute(object, "how/nsampleV",    ); // n/a
@@ -336,6 +336,8 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     
 	ret = addStringAttribute(object, "how/_creator_program", "rb52odim");
 	ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"Rainbow "),rb5_info->rainbow_version));
+	ret = addStringAttribute(object, "how/_orig_sensor_id", rb5_info->sensor_id);
+	ret = addStringAttribute(object, "how/_orig_sensor_name", rb5_info->sensor_name);
 
     /* Time is recorded according to object and sweep order:
      * If bottom-up volume or scan, it's the start of the (first/lowest) scan.
@@ -392,11 +394,18 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
 
     // Rainbow should be configured with a unique 3-char id
     sprintf(xpath_bgn,"(/table/radar)[*][@id='%s']",rb5_info->sensor_id);
-    sprintf(tmp_a,"NOD:%s,PLC:%s %s",
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale")),
-        return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state"))
-        );
+    if (return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state")) != NULL) {
+        sprintf(tmp_a,"NOD:%s,PLC:%s %s",
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/admin_state"))
+            );
+    } else {
+        sprintf(tmp_a,"NOD:%s,PLC:%s",
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/odim_node")),
+            return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/locale"))
+            );
+    }
     if(L_RB52ODIM_DEBUG) printf("\n%s: odim_source = %s\n",rb5_info->sensor_id,tmp_a);
     if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
       PolarVolume_setDate     ((PolarVolume_t*)object,func_iso8601_2_yyyymmdd(iso8601));
@@ -451,21 +460,22 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     
 // as per Issue #23, found in <slice refid="0">
 // NOTE: these attributes may not exist in the original RB5 raw file, thus check
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq"))) ret = addDoubleAttribute(object, "how/RXfrequency", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"))       ) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"))    ) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"))       ) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"))    ) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
-    if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
-//  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
+//ERROR: creates an attrib with value=str('')=0.0  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ,"")) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq")),"")) ret = addDoubleAttribute(object, "how/RXfrequency", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"))       ,"")) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"))    ,"")) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"))       ,"")) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"))    ,"")) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ,"")) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ,"")) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
 
     // NOTE, rest set at SCAN level: rpm, prf's pw, Nyquist, noise_power_dbz, nsamples
 
@@ -838,7 +848,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
             "  0x2000 = not used\n"
             "  0x4000 = not used\n"
             "  0x8000 = not used\n"
-            "<noisepowerh>, <noisepowerv> (32-bit): added in v5.44.0, noise power at 100 km range in dBZ");
+            "<noisepowerh>, <noisepowerv> range corrected noise power at 1 km range [dBZ]");
       }else if(strcmp(rb5_param.sparam,"numpulses") == 0){
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays);
@@ -855,13 +865,21 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         ret = PolarScan_addAttribute(scan, txpower_attr);
 	    RAVE_OBJECT_RELEASE(txpower_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
-        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
-        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
+//        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
+//        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
+        //convert IEEE 754 "single format" bit layout to 32 bit floating-point
+        float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
+        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerh", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerh_attr);
 	    RAVE_OBJECT_RELEASE(noisepowerh_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
-        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
-        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
+//        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
+//        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
+        //convert IEEE 754 "single format" bit layout to 32 bit floating-point
+        float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
+        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerv", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerv_attr);
 	    RAVE_OBJECT_RELEASE(noisepowerv_attr);
       }

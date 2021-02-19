@@ -59,7 +59,7 @@ IGNORE = [
     'how/_orig_file_format',
     'how/noisepowerh', #accept both raw (long) or processed (double)
     'how/noisepowerv', #accept both raw (long) or processed (double)
-    ] + TOP_IGNORE
+    ] + TOP_IGNORE + IFFY_ATTRIB_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
