@@ -78,12 +78,10 @@ def validateAttributes(utest, obj, ref_obj):
             else:
                 try:
                     utest.assertEqual(attr, ref_attr)
-                except AssertionError, e:
+                except:
                     print('AssertionError: aname : '+aname)
                     print('ref_attr : ', ref_attr)
                     print('    attr : ',     attr)
-#                    import pdb; pdb.set_trace()
-#                    utest.fail(str(e))
 
 
 def validateTopLevel(utest, obj, ref_obj):
@@ -380,8 +378,6 @@ class rb52odimTest(unittest.TestCase):
         compile_pvol = rb52odim.compileVolumeFromVolumes(volumes, adjustTime=False)
         combine_rio = rb52odim.combineRB5(ifiles, return_rio=True) #no adjustTime() functionality
         combine_pvol = combine_rio.object
-        
-#        import pdb; pdb.set_trace()
         validateTopLevel(self, compile_pvol, combine_pvol)
         for i in range(compile_pvol.getNumberOfScans()):
             compile_scan = compile_pvol.getScan(i)

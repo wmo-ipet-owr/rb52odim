@@ -525,6 +525,8 @@ def compile_big_scan(big_scan,scan,mb):
 
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
+#    print('sparam',sparam)
+
 
 
     if big_scan is None:
@@ -552,6 +554,7 @@ def compile_big_scan(big_scan,scan,mb):
 
     return big_scan
 
+def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
 
 def expand_txpower_by_pol(oscan,scan,sparam):
     import re
@@ -584,7 +587,9 @@ def compile_big_pvol(big_pvol,pvol,mb,iMEMBER):
             big_scan=None #begin with empty scans (removes existing param)
         else:
             big_scan=big_pvol.getScan(iSCAN)
+#            print('big_scan',iSCAN,np.degrees(big_scan.elangle),big_scan.nrays,big_scan.nbins)
         this_scan=pvol.getScan(iSCAN)
+#        print('this_scan',iSCAN,np.degrees(this_scan.elangle),this_scan.nrays,this_scan.nbins)
         big_scan=compile_big_scan(big_scan,this_scan,mb)
         big_pvol.removeScan(iSCAN)
         big_pvol.addScan(big_scan)
