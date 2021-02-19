@@ -40,8 +40,11 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 #include "rb5_utils.h"
 #include "xml_utils.h"
 
+#include <zlib.h> //for gzopen(), gzread(), gzclose()
 #include <ctype.h> //for tolower() & isalnum()
 #include <sys/stat.h> //stat()
+
+#include <math.h> //log10()
 
 #define L_RB52ODIM_DEBUG 0
 
