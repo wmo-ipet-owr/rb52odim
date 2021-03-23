@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2016 The Crown (i.e. Her Majesty the Queen in Right of Canada)
+Copyright (C) 2021 The Crown (i.e. Her Majesty the Queen in Right of Canada)
 
 This file is an add-on to RAVE.
 
@@ -17,13 +17,13 @@ You should have received a copy of the GNU Lesser General Public License
 along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 ------------------------------------------------------------------------*/
 
-Test suite for rave_ec
+Test suite for rb52odim
 
 @file
-@author Daniel Michelson, Environment and Climate Change Cananda
-@date 2016-06-10
+@author Peter Rodriguez, Environment and Climate Change Cananda
+@date 2021-02-24
 '''
-import unittest, os
+import unittest, os, sys
 import _rave
 import _rb52odim
 
@@ -35,15 +35,26 @@ if __name__ == '__main__':
 
   # do only this one test
   suite = unittest.TestSuite()
+#  suite.addTest(rb52odimTest("testWrongInput"))
+#  suite.addTest(rb52odimTest("testSingleRB5Azi"))
 #  suite.addTest(rb52odimTest("testSingleRB5Vol"))
+#  suite.addTest(rb52odimTest("testReadParameters"))
 #  suite.addTest(rb52odimTest("testCombineRB5Files"))
 #  suite.addTest(rb52odimTest("testCombineRB5FromTarball"))
 #  suite.addTest(rb52odimTest("testCompileScanParameters"))
 #  suite.addTest(rb52odimTest("testCompileVolumeFromVolumes"))
+#  suite.addTest(rb52odimTest("testMergeOdimScans2Pvol"))
+#  suite.addTest(rb52odimTest("testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO"))
 
   # do all
   suite = unittest.TestLoader().loadTestsFromTestCase(rb52odimTest)
 
-  #verbosity control added >=2.7 (crispus has 2.6.6!)
+  #verbosity control added >=2.7
   #".", "E" or "F" for "ok", "error" and "fail" written by self.AssertXXX method if verbose>=1
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  result = unittest.TextTestRunner(verbosity=3).run(suite)
+  #print('result : %s' % result)
+
+  #return an exit code
+  exit_code=int(not result.wasSuccessful())
+  #print('Exit code : %d' % exit_code)
+  sys.exit(exit_code)
