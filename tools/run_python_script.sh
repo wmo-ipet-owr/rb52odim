@@ -12,7 +12,6 @@
 #	    2016-06-10 Modified by Daniel Michelson for rave_ec
 #       2020-08-31 Peter Rodriguez, add PYTHON_BIN check 
 ############################################################
-SCRFILE=`python -c "import os;print(os.path.abspath(\"$0\"))"`
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 DEF_MK_FILE="${RAVEROOT}/rave/mkf/def.mk"

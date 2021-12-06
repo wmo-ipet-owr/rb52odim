@@ -141,6 +141,7 @@ def validateMergedPvol(self, new_pvol, iSCAN, ref_RB5_TARBALL):
 
 
 class rb52odimTest(unittest.TestCase):
+    CORRUPT_RB5_VOL = "../org/CASSR_2019062019480300RhoHV.vol.gz" # INCONSISTENT rb5_param->n_elems_data = 360 vs. n_elems_data = 180
     BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol" #volume version="5.22.6"
     GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol" #volume version="5.43.11"
     GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi" #volume version="5.43.11"
@@ -198,6 +199,22 @@ class rb52odimTest(unittest.TestCase):
     def testIsGoodRB5gzInput(self):
         status = _rb52odim.isRainbow5(self.CASRA_AZI_dBZ)
         self.assertTrue(status)
+
+    #2021-Oct-08: corrupt detection should return rio.object=pyNone
+    def testModuleReadRB5Corrupt(self):
+        rio = _rb52odim.readRB5(self.CORRUPT_RB5_VOL)
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
+
+    def testSingleRB5Corrupt(self):
+        rio = rb52odim.singleRB5(self.CORRUPT_RB5_VOL, return_rio=True)
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
+
+    def testReadRB5Corrupt(self):
+        rio = rb52odim.readRB5([self.CORRUPT_RB5_VOL])
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
 
     def testReadRB5Azi(self):
         rio = _rb52odim.readRB5(self.GOOD_RB5_AZI)
@@ -345,13 +362,6 @@ class rb52odimTest(unittest.TestCase):
     def testReadParameters(self):
         scan = rb52odim.readParameterFiles([self.CASRA_AZI_dBZ])[0]
         ref = _raveio.open(self.REF_CASRA_H5_SCAN).object
-        #CASRA_AZI_dBZ only processed by singleRB5()
-        #there are no expand_txpower_by_pol() attribs
-        #as REF_CASRA_H5_SCAN via compile_big_scan()
-        #add extra dual-/single-pol attribs, unfortunately cannot scan.removeAttribute()
-        for attrib in ref.getAttributeNames():
-            if any(substr in attrib for substr in ['single-pol_','dual-pol_']):
-                scan.addAttribute(attrib,ref.getAttribute(attrib))
         for pname in ref.getParameterNames():
             if pname != 'DBZH':
                 ref.removeParameter(pname)
@@ -376,6 +386,10 @@ class rb52odimTest(unittest.TestCase):
 
     def testReadRB5(self):
         rio = rb52odim.readRB5([self.CASRA_AZI_dBZ])
+        self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
+
+    def testReadRB5NotAList(self):
+        rio = rb52odim.readRB5(self.CASRA_AZI_dBZ)
         self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
 
     def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):

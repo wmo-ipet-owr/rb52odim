@@ -286,7 +286,7 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         // /omega/dmichelson/projects/rave/librave/toolbox/polarscan.c:55 struct _PolarScan_t->azangle DOES NOT EXIST
         PolarScan_setElangle(scan, rb5_info->angle_deg_arr[this_slice]*DEG_TO_RAD); // FAKE to fool polar_odim_io.c check of "where/elangle"
     } else {
-        PolarScan_setA1gate (scan, rb5_info->nrays[this_slice] - rb5_info->iray_0degN[this_slice]); // Index of the first azimuth gate radiated in the scan (note, CCW rotation)
+        PolarScan_setA1gate (scan, rb5_info->iray_0degN   [this_slice]); // Index of the first azimuth gate radiated in the scan
         PolarScan_setElangle(scan, rb5_info->angle_deg_arr[this_slice]*DEG_TO_RAD); /* Radians! Use constant DEG_TO_RAD if necessary. */
     } 
 
@@ -549,7 +549,11 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Done top-level 'how' attributes...\n");
  * Reads an RB5 buffer and returns a RaveIO_t* with a complete payload.
  */
 RaveIO_t* getRaveIObuf(const char* ifile, char **inp_buffer, size_t buffer_len) {
-    RaveIO_t* RETURN_raveio_NULL = NULL;
+
+    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
+    RaveCoreObject* object = NULL;
+    RaveIO_setObject(raveio, object); //init with raveio.object = NULL
+    int rot = Rave_ObjectType_UNDEFINED;
 
 //#############################################################################
 
@@ -561,7 +565,7 @@ RaveIO_t* getRaveIObuf(const char* ifile, char **inp_buffer, size_t buffer_len) 
 //printf("GOT inp_fname = %s\n", inp_fname);
 //printf("buffer_len= %ld\n", buffer_len);
 //printf("READ buffer = %.250s\n",*inp_buffer);
-//return RETURN_raveio_NULL;
+//return raveio;
 
     rb5_info.buffer=*inp_buffer;
     rb5_info.buffer_len=buffer_len;
@@ -577,28 +581,24 @@ RaveIO_t* getRaveIObuf(const char* ifile, char **inp_buffer, size_t buffer_len) 
     if(rb5_info.xpathCtx == NULL) {
         fprintf(stderr,"Error: unable to create new XPath context\n");
         close_rb5_info(&rb5_info);
-        return RETURN_raveio_NULL;
+        return raveio;
     }
 
     int L_VERBOSE=0;
-    if(populate_rb5_info(&rb5_info,L_VERBOSE) != 0) {
+    if(populate_rb5_info(&rb5_info,L_VERBOSE) != EXIT_SUCCESS) {
       fprintf(stderr,"Error cannot process file = %s\n", inp_fname);
-      return RETURN_raveio_NULL;
+      return raveio;
     }
 
 //#############################################################################
-    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
-    RaveCoreObject* object = NULL;
-    int rot = Rave_ObjectType_UNDEFINED;
-
     /* If the RB5 file contains a scan or a pvol, create equivalent object */
     rot = objectTypeFromRB5(rb5_info);
     if (rot == Rave_ObjectType_PVOL) {
       object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarVolume_TYPE);
+    } else if(rot == Rave_ObjectType_SCAN) {
+      object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
     } else {
-      if(rot == Rave_ObjectType_SCAN) {
-        object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
-      } else return RETURN_raveio_NULL;
+      return raveio; //unknown
     }
 
     /* Map RB5 object(s) to Toolbox ones. */
@@ -616,7 +616,11 @@ RaveIO_t* getRaveIObuf(const char* ifile, char **inp_buffer, size_t buffer_len) 
  * Reads an RB5 file and returns a RaveIO_t* with a complete payload.
  */
 RaveIO_t* getRaveIO(const char* ifile) {
-    RaveIO_t* RETURN_raveio_NULL = NULL;
+
+    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
+    RaveCoreObject* object = NULL;
+    RaveIO_setObject(raveio, object); //init with raveio.object = NULL
+    int rot = Rave_ObjectType_UNDEFINED;
 
 //#############################################################################
 
@@ -626,7 +630,7 @@ RaveIO_t* getRaveIO(const char* ifile) {
     strcpy(xml_info.inp_fullfile,inp_fname);
     if(open_xml_buffer(&xml_info) != 0) {
       fprintf(stderr,"Error cannot process file = %s\n", inp_fname);
-      return RETURN_raveio_NULL;
+      return raveio;
     }
 
     //get RB5 top level info
@@ -641,24 +645,20 @@ RaveIO_t* getRaveIO(const char* ifile) {
 
 //#############################################################################
     int L_VERBOSE=0;
-    if(populate_rb5_info(&rb5_info,L_VERBOSE) != 0) {
+    if(populate_rb5_info(&rb5_info,L_VERBOSE) != EXIT_SUCCESS) {
       fprintf(stderr,"Error cannot process file = %s\n", inp_fname);
-      return RETURN_raveio_NULL;
+      return raveio;
     }
 
 //#############################################################################
-    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
-    RaveCoreObject* object = NULL;
-    int rot = Rave_ObjectType_UNDEFINED;
-
     /* If the RB5 file contains a scan or a pvol, create equivalent object */
     rot = objectTypeFromRB5(rb5_info);
     if (rot == Rave_ObjectType_PVOL) {
       object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarVolume_TYPE);
+    } else if(rot == Rave_ObjectType_SCAN) {
+      object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
     } else {
-      if(rot == Rave_ObjectType_SCAN) {
-        object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
-      } else return RETURN_raveio_NULL;
+      return raveio; //unknown
     }
 
     /* Map RB5 object(s) to Toolbox ones. */
