@@ -22,14 +22,18 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
  * @author Daniel Michelson and Peter Rodriguez, Environment Canada
  * @date 2016-08-17
  */
-#include <string.h>
-#include "rb52odim.h"
-#include "rave_debug.h"
+//#include <string.h>
+//#include "rave_debug.h"
+
+//#include "rb52odim.h"
+#include <rb52odim.h>
 
 /**
  * Command-line rb5_2_odim
  *
- * Compile: make -f Makefile.w_rb5_2_odim_main
+ * Compile: make -f Makefile.w_rb5_2_odim_main > make.rb5_2_odim_main.log 2>&1 &
+ *
+ * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/2016081612320300dBZ.azi -o dummy.azi.h5
  *
  * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2015120916511800dBZ.ele -o dummy.ele.h5
  * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2016081612320300dBZ.azi -o dummy.azi.h5
@@ -44,13 +48,8 @@ int main(int argc,char *argv[]) {
     int i;
     const char *ifile=NULL, *ofile=NULL;
 
-    /* call this before any of your code */
-    Rave_initializeDebugger();
-    Rave_setDebugLevel(RAVE_SPEWDEBUG);
-
+    printf("HERE!!!\n");
     RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
-    RaveCoreObject* object = NULL;
-    int rot = Rave_ObjectType_UNDEFINED;
 
     if (argc!=5) {
       printf("usage: %s -i RB5_file -o ODIM_H5_file\n", argv[0]);
@@ -116,23 +115,51 @@ int main(int argc,char *argv[]) {
     rb5_info.doc=xml_info.doc;
     rb5_info.xpathCtx=xml_info.xpathCtx;
 
-    int L_VERBOSE=0;
-    if(populate_rb5_info(&rb5_info,L_VERBOSE) != 0) {
+    int L_VERBOSE=1;
+    if(populate_rb5_info(&rb5_info,L_VERBOSE) != EXIT_SUCCESS) {
       fprintf(stderr,"Error cannot process file = %s\n", inp_fname);
       return RETURN_FAILURE;
+//      return raveio;
     }
+
+    printf("Successfully ingested : %s\n", inp_fname);
+
+//#############################################################################
+
+    /* call this before any of your RAVE code */
+//    Rave_initializeDebugger();
+//    Rave_setDebugLevel(RAVE_SPEWDEBUG);
+
+//TBD: seg fault
+// improper RAVE lib linking?
+// bbuild make install'd on ubu16 system's 3.5.2 (default, Nov 12 2018, 13:43:14)
+
+    // bbuild/bbuild/packages/rave-py3/librave/toolbox/rave_object.h
+    printf("RaveIO_TYPE = %s\n", RaveIO_TYPE.name);
+    printf("HERE!!!\n");
+    RaveCoreObject* object = RAVE_OBJECT_NEW(&PolarVolume_TYPE);
+    printf("HERE!!!\n");
+    printf("HERE!!!\n");
+//    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
+    printf("HERE!!!\n");
+
+//    RaveCoreObject* object = NULL;
+//    RaveIO_setObject(raveio, object); //init with raveio.object = NULL
+//    int rot = Rave_ObjectType_UNDEFINED;
 
 //#############################################################################
 
     /* If the RB5 file contains a scan or a pvol, create equivalent object */
-    rot = objectTypeFromRB5(rb5_info);
+    int rot = objectTypeFromRB5(rb5_info);
     if (rot == Rave_ObjectType_PVOL) {
       object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarVolume_TYPE);
+    } else if (rot == Rave_ObjectType_SCAN) {
+      object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
     } else {
-      if(rot == Rave_ObjectType_SCAN) {
-        object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
-      } else return RETURN_FAILURE;
+//      return RETURN_FAILURE;
+//      return raveio;
     }
+    printf("HERE!!!\n");
 
     /* Map RB5 object(s) to Toolbox ones. */
     ret = populateObject(object, &rb5_info);

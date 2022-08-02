@@ -1,0 +1,4 @@
+modules/.dep
+*.so
+*.o
+src/.dep

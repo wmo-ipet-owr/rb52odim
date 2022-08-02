@@ -38,6 +38,8 @@ os.environ["RB52ODIMCONFIG"] = RB52ODIMCONFIG
 
 ACQUISITION_UPDATE_TIME = 6  # minutes
 
+class RainbowDecodeError(Exception):
+    pass
 
 ## Rudimentary input file validation
 # @param string input file name
@@ -90,7 +92,9 @@ def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
     if not _rb52odim.isRainbow5(inp_fullfile):
         raise IOError("%s is not a proper RB5 raw file" % orig_ifile)
     rio = _rb52odim.readRB5(inp_fullfile)
-    if TMPFILE: os.remove(inp_fullfile)
+
+    if TMPFILE:
+        os.remove(inp_fullfile)
 
     if out_fullfile:
         rio.save(out_fullfile)
@@ -111,9 +115,12 @@ def readParameterFiles(ifiles):
     ifiles = sorted(ifiles, key=lambda s: s.lower())  # case-insensitive sort
     objects = []
     for ifile in ifiles:
-        try: rio = singleRB5(ifile, return_rio=True)
-        except: print("readParameterFiles: failed to read %s" % ifile)
-        objects.append(rio.object)
+        rio = singleRB5(ifile, return_rio=True)
+        if rio.object is None:
+            print("Failed to read file: %s" % ifile)
+        else:
+            objects.append(rio.object)
+
     return objects
 
 
@@ -159,8 +166,10 @@ def compileVolumeFromVolumes(volumes, adjustTime=True):
     ovolume = volumes[0].clone()  # If we don't clone, we mess up the original
     nscans = ovolume.getNumberOfScans()
     while 1:
-        try: ovolume.removeScan(0)
-        except: break
+        try:
+            ovolume.removeScan(0)
+        except:
+            break
 
     # Second iteration, pull out scans, merge their parameters, and add the 
     # multi-parameter scan to the output volume
@@ -235,8 +244,15 @@ def compileVolumeFromScans(scans, adjustTime=True):
 # @param list containing input file strings
 # @returns RaveIOCore object
 def readRB5(filenamelist):
+    if isinstance(filenamelist, str): #oops, not a list
+        filenamelist = [filenamelist]
+
+    rio = _raveio.new() #object = NULL
+
     objects = readParameterFiles(filenamelist)
-    rio = _raveio.new()
+    if len(objects) == 0:
+        return rio
+
     if _polarscan.isPolarScan(objects[0]):
         rio.object = compileScanParameters(objects)
     elif _polarvolume.isPolarVolume(objects[0]):
@@ -262,11 +278,12 @@ def combineRB5(ifiles, out_fullfile=None, return_rio=False):
 
         if mb['rb5_ftype'] == "rawdata":
             rio=singleRB5(inp_fullfile, return_rio=True) ## w/ isRainbow5() check and handles .gz
-            this_obj=rio.object
-            if rio.objectType == _rave.Rave_ObjectType_PVOL:
-                big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
-            else:
-                big_obj=compile_big_scan(big_obj,this_obj,mb)
+            if rio is not None:
+                this_obj=rio.object
+                if rio.objectType == _rave.Rave_ObjectType_PVOL:
+                    big_obj=compile_big_pvol(big_obj,this_obj,mb,iMEMBER)
+                else:
+                    big_obj=compile_big_scan(big_obj,this_obj,mb)
     
     container=_raveio.new()
     container.object=big_obj
@@ -301,7 +318,6 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
                  (mb['nam_sparam'] == "ZDR"))
             ):
 
-#        if mb['rb5_ftype'] == "rawdata":
             obj_mb=tar.extractfile(this_member) #EXTRACTED MEMBER OBJECT
 
             rb5_buffer=obj_mb.read() #NOTE: once read(), buffer is detached from obj_mb
@@ -310,7 +326,6 @@ def combineRB5FromTarball(ifile, ofile, out_basedir=None, return_rio=False):
                 raise IOError("%s is not a proper RB5 buffer" % rb5_buffer)
             else:
                 buffer_len=len(rb5_buffer)
-#                print('### inp_fullfile = %s (%ld)' % (inp_fullfile,  buffer_len))
                 rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,buffer_len) ## by BUFFER
                 this_obj=rio.object
 
@@ -533,6 +548,10 @@ def compile_big_scan(big_scan,scan,mb):
     sparam=sparam_arr[0]
     param=scan.getParameter(sparam)
 #    print('sparam',sparam)
+
+
+
+
 
     if big_scan is None:
         big_scan=scan.clone() #clone

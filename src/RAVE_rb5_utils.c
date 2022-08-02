@@ -166,13 +166,13 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
     strcpy(sparam,rb5_param->sparam);
     size_t n_elems_data    =rb5_param->n_elems_data;
     size_t raw_binary_depth=rb5_param->raw_binary_depth;
-    size_t raw_binary_min;
-    size_t raw_binary_max;
-    size_t raw_binary_width;
-    float data_range_min   =rb5_param->data_range_min;
-    float data_range_max   =rb5_param->data_range_max;
-    float data_range_width;
-    float data_step;
+    size_t raw_binary_min=-1L;
+    size_t raw_binary_max=-1L;
+    size_t raw_binary_width=-1L;
+    float data_range_min=-1;
+    float data_range_max=-1;
+    float data_range_width=-1;
+    float data_step=-1;
     float NODATA_val=-99;
 
     size_t i;
@@ -232,18 +232,8 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
         raw_binary_min=1L;
         raw_binary_max=(1L<<raw_binary_depth)-1;
         raw_binary_width=raw_binary_max-raw_binary_min;
-
-        //removed special param packing check, 2017-Mar-23
-        // we found KDP have variable data range!
-        // using rb5_param->data_range_min|max defaults (set in var declaration above)
-        //if (strcmp(conversion, "kdp_data") == 0) {
-        //    data_range_min=-20.0;
-        //    data_range_max=+20.0;
-        //} else if (strcmp(conversion, "phidp_data") == 0) {
-        //    data_range_min=  0.0;
-        //    data_range_max=360.0;
-        //}
-        
+        data_range_min=rb5_param->data_range_min;
+        data_range_max=rb5_param->data_range_max;
         data_range_width=data_range_max-data_range_min;
         data_step=data_range_width/raw_binary_width; //127.0/254=0.5 for dBZ
         if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  data_step = %f\n",data_step);
@@ -290,7 +280,7 @@ size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_par
     size_blob=get_blobid_buffer(&(*rb5_info), blobid, &blob_buffer);
     if (blob_buffer == NULL) {
       fprintf(stdout,"ERROR: blobid = %ld NOT FOUND!!!\n",blobid);
-      return(EXIT_NULL_VAL);
+      return EXIT_NULL_VAL;
     }
 
     n_elems_data=size_blob/data_bytesize;
@@ -332,7 +322,7 @@ size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_par
     if(rb5_param->n_elems_data != n_elems_data){
         fprintf(stdout,"  INCONSISTENT rb5_param->n_elems_data = %ld\n",rb5_param->n_elems_data);
         fprintf(stdout,"  INCONSISTENT n_elems_data = %ld\n",n_elems_data);
-        return(EXIT_FAILURE);
+        return EXIT_NULL_VAL;
     }
     rb5_param->n_elems_data=n_elems_data;
 
@@ -758,7 +748,11 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
         sprintf(xpath_bgn,"(/volume/scan/slice)[%2d]",this_slice+1);
         // Note: using get_xpath_slice_attrib() to cycle thru 0th slice upward
         strcpy(rb5_info->slice_iso8601_bgn      [this_slice],get_xpath_iso8601_attrib(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/slicedata/")));
-        get_slice_end_iso8601(&(*rb5_info),      this_slice);
+        
+        if (get_slice_end_iso8601(&(*rb5_info),this_slice) != EXIT_SUCCESS){
+            return EXIT_FAILURE;
+        }
+
                rb5_info->angle_deg_arr          [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/posangle"));
                rb5_info->slice_nyquist_vel      [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/dynv/@max"));
                rb5_info->slice_nyquist_wid      [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/dynw/@max"));
@@ -847,7 +841,9 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
         //needed angle_deg_arr & slice_ray_angle_res_deg
         //calculate moving and fixed average ray readbacks
-        get_slice_mid_angle_readbacks(&(*rb5_info),this_slice);
+        if (get_slice_mid_angle_readbacks(&(*rb5_info),this_slice) != EXIT_SUCCESS){
+            return EXIT_FAILURE;
+        }
         //get iray_0degN, updates rb5_info->slice_moving_angle_arr
         get_slice_iray_0degN(&(*rb5_info),this_slice);
 
@@ -856,7 +852,7 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
         fprintf(stdout,"\n");
     }
 
-    return(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 
 }
 
@@ -1114,7 +1110,7 @@ void reorder_by_iray_0degN(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr){
 
 //#############################################################################
 
-void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
+int get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
 
     static char iso8601_bgn[MAX_STRING]="\0";
     strcpy(iso8601_bgn,rb5_info->slice_iso8601_bgn[req_slice]);
@@ -1130,6 +1126,7 @@ void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
     char req_rayinfo_name[MAX_STRING]="\0";
     strcpy(req_rayinfo_name,"timestamp");
     int idx_req=find_in_string_arr(rb5_info->rayinfo_name_arr,rb5_info->n_rayinfos,req_rayinfo_name);
+    size_t n_elems;
     if(idx_req != -1) {
 
       int L_RB5_PARAM_VERBOSE=0;
@@ -1138,7 +1135,10 @@ void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
 
       float *data_arr=NULL;
       void *raw_arr=NULL;
-      return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+      n_elems = return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+      if (n_elems == 0){
+          return EXIT_FAILURE;
+      }
       convert_raw_to_data(&rb5_param,&raw_arr,&data_arr);
     
       // determine maximum value in array
@@ -1169,12 +1169,13 @@ void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
     strcpy(rb5_info->slice_iso8601_end[req_slice],iso8601_end);
     if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  iso8601_bgn = %s\n",iso8601_bgn);
     if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  iso8601_end = %s\n",iso8601_end);
+    return EXIT_SUCCESS;
     
 }
 
 //#############################################################################
 
-void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
+int get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
 
     char req_rayinfo_name[MAX_STRING]="\0";
     int idx_req=-1;
@@ -1201,12 +1202,16 @@ void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
     //moving_start_deg_arr
     strcpy(req_rayinfo_name,"startangle"); //mandatory
     idx_req=find_in_string_arr(rb5_info->rayinfo_name_arr,rb5_info->n_rayinfos,req_rayinfo_name);
+    size_t n_elems;
     if(idx_req == -1) {
         fprintf(stdout,"IMPOSSIBLE: %s not found\n", req_rayinfo_name);
     } else {
         sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",req_slice+1,"rayinfo",idx_req+1);
         strRB5_PARAM_INFO rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
-        return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+        n_elems = return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+        if (n_elems == 0){
+            return EXIT_FAILURE;
+        }
         convert_raw_to_data(&rb5_param,&raw_arr,&data_arr);
         for (i = 0; i < this_nrays; i++) {
             //handle RHI -'ve elevation angles as per RB5_FileFormat_5510.pdf, pg.48 "angle (ELE scan)"
@@ -1341,5 +1346,5 @@ void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
 //               (rb5_info->slice_fixed_angle_arr[req_slice])[i]-=360.0;
 //        }
     }    
-
+    return EXIT_SUCCESS;
 }

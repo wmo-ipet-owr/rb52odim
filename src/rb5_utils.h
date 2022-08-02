@@ -166,5 +166,5 @@ size_t find_in_string_arr(char arr[][MAX_NSTRINGS], size_t n, char *match);
 void dump_strRB5_PARAM_INFO(strRB5_PARAM_INFO rb5_param);
 void get_slice_iray_0degN(strRB5_INFO *rb5_info, int req_slice);
 void reorder_by_iray_0degN(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr);
-void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice);
-void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice);
+int get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice);
+int get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice);

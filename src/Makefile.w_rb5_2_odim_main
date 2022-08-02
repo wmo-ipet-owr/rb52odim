@@ -82,7 +82,7 @@ $(DEPDIR):
 	+@[ -d $@ ] || mkdir -p $@
 
 .PHONY=all
-all:		$(LIBRB52ODIM) bin
+all:		$(LIBRB52ODIM) bin install
 
 $(LIBRB52ODIM): $(DEPDIR) $(RB52ODIMOBJS) 
 	$(LDSHARED) -o $@ $(RB52ODIMOBJS)
