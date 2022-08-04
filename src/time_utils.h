@@ -10,6 +10,7 @@
 
 //#############################################################################
 // function declarations
+long int cast_systime_2_time_t(double systime);
 struct tm func_iso8601_2_tm_struct(char *inp_iso8601);
 double func_iso8601_2_systime(char *iso8601);
 char* func_systime_2_iso8601(double systime);

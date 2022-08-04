@@ -56,34 +56,35 @@ TOP_IGNORE=[
           ]
 
 # Not needed because RAVE either assigns these automagically, or they are just not relevant
-IGNORE = [
+RAVE_IGNORE = [
     'what/version',
     'what/object', 
-    'how/_orig_file_format',
-    'how/noisepowerh', #accept both raw (long) or processed (double)
-    'how/noisepowerv', #accept both raw (long) or processed (double)
-    ] + TOP_IGNORE
+    'how/scan_count',
+    ]
+
+IGNORE = RAVE_IGNORE + TOP_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
         if aname not in IGNORE:
             ref_attr = ref_obj.getAttribute(aname)
+            if aname not in obj.getAttributeNames():
+                print('No such attribute... aname : '+aname)
+#                import pdb; pdb.set_trace()
             attr = obj.getAttribute(aname)
-            if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
-                utest.assertTrue(np.array_equal(attr, ref_attr))
-#                try: #nicer failure reporting
-#                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
-#                except:
-#                    print('AssertionError: aname : '+aname)
-            else:
-                try:
+            try:
+                if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
+                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-7, atol=0)
+                elif isinstance(ref_attr, float):
+                    utest.assertAlmostEqual(attr, ref_attr) #default 7 decimal places
+                else:
                     utest.assertEqual(attr, ref_attr)
-                except AssertionError as e:
-                    print('AssertionError: aname : '+aname)
-                    print('ref_attr : ', ref_attr)
-                    print('    attr : ',     attr)
-#                    import pdb; pdb.set_trace()
-#                    utest.fail(str(e))
+            except AssertionError as e:
+               print('AssertionError: aname : '+aname)
+               print('ref_attr : ', ref_attr)
+               print('    attr : ',     attr)
+#               import pdb; pdb.set_trace()
+#               utest.fail(str(e))
 
 
 def validateTopLevel(utest, obj, ref_obj):
@@ -116,7 +117,7 @@ def validateScan(utest, scan, ref_scan):
     utest.assertEqual(scan.rscale, ref_scan.rscale)
     utest.assertEqual(scan.rstart, ref_scan.rstart)
     for pname in ref_scan.getParameterNames():
-#        print 'pname : '+pname
+        #print('pname : '+pname)
         utest.assertEqual(scan.hasParameter(pname), 
                            ref_scan.hasParameter(pname))
         param = scan.getParameter(pname)
@@ -365,6 +366,16 @@ class rb52odimTest(unittest.TestCase):
         for pname in ref.getParameterNames():
             if pname != 'DBZH':
                 ref.removeParameter(pname)
+        #REF_CASRA_H5_SCAN built via compileScanParameters()
+        #so drop all/any attribs added by expand_txpower_by_pol()
+        anames = ref.getAttributeNames()
+        aprefix_list=('dual-pol_ single-pol_').split(' ')
+        aroot_list=('TXpower peakpwr avgpwr').split(' ')
+        for aprefix in aprefix_list:
+            for aroot in aroot_list:
+                new_aname='how/'+aprefix+aroot
+                if new_aname in anames:
+                    ref.removeAttribute(new_aname)
         validateScan(self, scan, ref)
 
     def testCompileScanParameters(self):

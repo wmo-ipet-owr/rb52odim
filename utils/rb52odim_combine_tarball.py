@@ -37,7 +37,7 @@ sys.path.insert(1,'../modules/')
 import sys, os, errno
 import _rave, _raveio
 
-import _rb52odim #Note using ../modules/_rb52odim.so#
+import _rb52odim #Note using ../modules/_rb52odim.so
 # NOTE: but baked w/ /opt/baltrad/rave/lib/librb52odim.so?
 # NOTE: fixed make install w/ chmod 775
 from rb52odim import * #Note using ../Lib/rb52odim.py
@@ -73,7 +73,7 @@ def combine(options):
                 print('Hmm, not a proper RB5 raw file I can handle')
                 exit()
             else:
-                buffer_len=obj_mb.size
+                buffer_len=len(rb5_buffer)
                 rio=_rb52odim.readRB5buf(inp_fullfile,rb5_buffer,buffer_len) ### by BUFFER
 #                rio=_rb52odim.readRB5(inp_fullfile) ## by FILENAME
                 this_obj=rio.object

@@ -3,10 +3,10 @@
  *
  * Author: Peter Rodriguez 2016-Sep-19
  *
- * compile: gcc -g -Wall -lm time_utils.c -o time_utils
+ * compile only: gcc -g -c time_utils.c -o time_utils.o
  * 
- * check: valgrind --leak-check=full ./time_utils
- *
+ * 2022-01-13:  PR  use timegm() instead of mktime() to use UTC not OS local timezone (TZ env var)
+ *                  tm_struct should not round by millisec, for (iso8601 -> systime -> iso8601)
  * 2016-09-19:  PR  new subroutines,
  *                  - func_iso8601_2_tm_struct()
  *                  - func_iso8601_2_systime()
@@ -21,6 +21,19 @@
 
 #include "time_utils.h"
 
+long int cast_systime_2_time_t(double systime){
+
+    //note: time_t doesn't handle millisecs, a long int not a double var
+    //any millisecs shall increase the systime_t
+    int milli=(systime-floor(systime))*1000.;
+    if(milli != 0) {
+      return (time_t) systime+1;
+    } else {
+      return (time_t) systime;
+    }
+
+}
+
 //#############################################################################
 struct tm func_iso8601_2_tm_struct(char *inp_iso8601) {
 
@@ -31,7 +44,6 @@ struct tm func_iso8601_2_tm_struct(char *inp_iso8601) {
     char s_minute[2+1] = "\0"; //"MM"
     char s_second[6+1] = "\0"; //"SS.nnn"
     struct tm tm_info={0};
-    float sec_float;
 
     sscanf(inp_iso8601,"%4c-%2c-%2c%*c%2c:%2c:%6c",
         s_year,
@@ -47,10 +59,8 @@ struct tm func_iso8601_2_tm_struct(char *inp_iso8601) {
     tm_info.tm_mday = atoi(s_day);
     tm_info.tm_hour = atoi(s_hour);
     tm_info.tm_min  = atoi(s_minute);
-    /* seconds are given to 1000th in some places, so assume float then round */
-    /* tm_info.tm_sec  = atoi(s_second); */
-    sec_float = atof(s_second);
-    tm_info.tm_sec  = (int)( sec_float + 0.5);
+    tm_info.tm_sec  = atoi(s_second);
+    /* millisec handling in func_iso8601_2_systime() */
 
     return(tm_info);
 
@@ -60,7 +70,7 @@ struct tm func_iso8601_2_tm_struct(char *inp_iso8601) {
 double func_iso8601_2_systime(char *iso8601) {
 
     struct tm tm_info=func_iso8601_2_tm_struct(iso8601);
-    double systime=mktime(&tm_info);
+    double systime=timegm(&tm_info); //uses Universal Coordinated Time (UTC)
 
     //add millisecs
     char *p_dot=strstr(iso8601,".");
@@ -98,7 +108,7 @@ char* func_iso8601_2_yyyymmddhhmmss(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=systime;
+    time_t systime_t=cast_systime_2_time_t(systime);
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%Y%m%d%H%M%S",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -109,7 +119,7 @@ char* func_iso8601_2_yyyymmdd(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=systime;
+    time_t systime_t=cast_systime_2_time_t(systime);
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%Y%m%d",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -120,7 +130,7 @@ char* func_iso8601_2_hhmmss(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=systime;
+    time_t systime_t=cast_systime_2_time_t(systime);
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%H%M%S",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -129,12 +139,11 @@ char* func_iso8601_2_hhmmss(char* iso8601) {
 //#############################################################################
 char* func_iso8601_2_urpvalid(char* inp_iso8601, int L_ROUNDING, int minute_res) {
     // L_ROUNDING=0=flooring, 1=rounding
-    //note: time_t doesn't handle millisecs, not a double var
 
-    time_t inp_systime=func_iso8601_2_systime(inp_iso8601);
-
+    time_t inp_systime=cast_systime_2_time_t(func_iso8601_2_systime(inp_iso8601));
     time_t nINTERVAL_SECs=minute_res*60;
     time_t out_systime;
+
     if(L_ROUNDING){ //rounding
         fprintf(stdout,"  ROUNDING %s within %ld sec\n",inp_iso8601,nINTERVAL_SECs);
         double d_tmpa=(inp_systime+(nINTERVAL_SECs/2.))/nINTERVAL_SECs;
