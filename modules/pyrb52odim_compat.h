@@ -136,7 +136,7 @@ static int PyRB52ODIMAPI_CompareWithASCIIString(PyObject* ptr, const char* name)
     }
 #endif
   } else {
-	result = strcmp(PyString_AsString(ptr), name);
+    result = strcmp(PyString_AsString(ptr), name);
   }
   return result;
 }

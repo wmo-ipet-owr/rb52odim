@@ -1,6 +1,8 @@
 #make -f Makefile.w_rb5_2_odim_main
 #./rb5_2_odim -i ../test/CASRA_2017121520000300dBZ.vol -o dummy.h5
 #h5dump --attribute=how/RXfrequency dummy.h5
+#Inconsistent datetimehighaccuracy
+#./rb5_2_odim -i ../test/org/Dopvol1_A.azi/2015120916500500dBuZ.azi -o dummy.h5
 
 
 ###########################################################################

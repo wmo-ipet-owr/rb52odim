@@ -31,9 +31,10 @@ from rb52odimTests import *
 
 
 if __name__ == '__main__':
+#  unittest.main()
 
-  # do only these tests
-#  suite = unittest.TestSuite() #required
+  # do only this one test
+#  suite = unittest.TestSuite()
 ##  suite.addTest(rb52odimTest("setUp"))
 ##  suite.addTest(rb52odimTest("tearDown"))
 #  suite.addTest(rb52odimTest("testWrongInput"))
@@ -47,6 +48,7 @@ if __name__ == '__main__':
 #  suite.addTest(rb52odimTest("testReadRB5Vol"))
 #  suite.addTest(rb52odimTest("testSingleRB5Azi"))
 #  suite.addTest(rb52odimTest("testSingleRB5Vol"))
+#  suite.addTest(rb52odimTest("testTimeDowngradeRB5Vol"))
 #  suite.addTest(rb52odimTest("testCombineRB5Files"))
 #  suite.addTest(rb52odimTest("testCombineRB5FilesReturnRIO"))
 #  suite.addTest(rb52odimTest("testCombineRB5FromTarball"))

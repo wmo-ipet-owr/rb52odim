@@ -39,9 +39,9 @@ import sys, os, errno
 import _rave, _raveio
 
 import _rb52odim #Note using ../modules/_rb52odim.so
+# NOTE: but baked w/ /opt/baltrad/rave/lib/librb52odim.so?
+# NOTE: fixed make install w/ chmod 775
 #from rb52odim import * #Note using ../Lib/rb52odim.py
-
-#Lib/rb52odim.py: singleRB5() is a wrapper to readRB5(no save-to-disk option)
 
 ## Reads RB5 files and merges their contents into an output ODIM_H5 file
 # @param optparse.OptionParser object
@@ -49,9 +49,19 @@ def singleRB5(options):
     inp_fullfile = options.ifile
     out_fullfile = options.ofile
 
+    #TMPFILE = False
+    #validate(inp_fullfile)
+    #orig_ifile = copy(inp_fullfile)
+    #if mimetypes.guess_type(inp_fullfile)[1] == 'gzip':
+    #    inp_fullfile = gunzip(inp_fullfile)
+    #    TMPFILE = True
     if not _rb52odim.isRainbow5(inp_fullfile):
         raise IOError("%s is not a proper RB5 raw file" % inp_fullfile)
+    #    raise IOError("%s is not a proper RB5 raw file" % orig_ifile)
     rio = _rb52odim.readRB5(inp_fullfile)
+
+    #if TMPFILE:
+    #    os.remove(inp_fullfile)
 
     rio.save(out_fullfile)
     print("Created : %s" % out_fullfile)

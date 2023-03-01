@@ -46,12 +46,12 @@ int objectTypeFromRB5(strRB5_INFO rb5_info) {
  * Input object is an empty Toolbox sweep/moment of data and a native RB5 object (if that's how RB5 data are provided).
  */
 int populateParam(PolarScanParam_t* param, strRB5_INFO *rb5_info, strRB5_PARAM_INFO *rb5_param) {
-	int ret = 0;
-	/* Access the data buffer from RB5. Ensure they are ordered properly, ie. with the first ray pointing north. */
-	//rb5_util vars
+    int ret = 0;
+    /* Access the data buffer from RB5. Ensure they are ordered properly, ie. with the first ray pointing north. */
+    //rb5_util vars
     //Note: my decode returns a void*, user must resolve by data_depth, i.e.  data_type
     //convert_raw_to_data() populates rb5_param structure as per conversion type
-	void *raw_arr=NULL;
+    void *raw_arr=NULL;
     float *data_arr=NULL;
     return_param_blobid_raw(&(*rb5_info), &(*rb5_param), &raw_arr);
 
@@ -61,121 +61,129 @@ int populateParam(PolarScanParam_t* param, strRB5_INFO *rb5_info, strRB5_PARAM_I
     convert_raw_to_data(&(*rb5_param),&raw_arr,&data_arr);
     rb5_param->n_elems_data=orig_n_elems_data; //restore
 
-	/* Figure out what data depth this moment of data is in, ie. 8, 16, 32, or 64-bit (u)int or float.
-	 * Map to Toolbox equivalent. This example is for 16-bit unsigned int */
+    /* Figure out what data depth this moment of data is in, ie. 8, 16, 32, or 64-bit (u)int or float.
+     * Map to Toolbox equivalent. This example is for 16-bit unsigned int */
            if(rb5_param->raw_binary_depth ==  8) {
-	     //type = RaveDataType_UCHAR;
+         //type = RaveDataType_UCHAR;
 //        uint8_t  *out_raw_arr=((uint8_t  *)raw_arr);
-//	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
-	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint8_t  *)raw_arr), RaveDataType_UCHAR);
+//        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
+        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint8_t  *)raw_arr), RaveDataType_UCHAR);
     } else if(rb5_param->raw_binary_depth == 16) {
-	     //type = RaveDataType_USHORT;
+         //type = RaveDataType_USHORT;
 //        uint16_t *out_raw_arr=((uint16_t *)raw_arr);
-//	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
-	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint16_t *)raw_arr), RaveDataType_USHORT);
+//        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
+        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint16_t *)raw_arr), RaveDataType_USHORT);
     } else if(rb5_param->raw_binary_depth == 32) {
-	     //type = RaveDataType_UINT;
+         //type = RaveDataType_UINT;
 //        uint32_t *out_raw_arr=((uint32_t *)raw_arr);
-//	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
-	    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint32_t *)raw_arr), RaveDataType_UINT);
+//        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type);
+        ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, ((uint32_t *)raw_arr), RaveDataType_UINT);
     }
 
-	/* Set the data in the Toolbox object */
-//	ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, data_arr, RaveDataType_FLOAT);
-//	ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type); //hmm, doesn't type cast
+    /* Set the data in the Toolbox object */
+//    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, data_arr, RaveDataType_FLOAT);
+//    ret = PolarScanParam_setData(param, rb5_param->nbins, rb5_param->nrays, out_raw_arr, type); //hmm, doesn't type cast
 
-	if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
+    if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
     if (data_arr != NULL ) RAVE_FREE(data_arr);
 
-	//	RaveDataType type;
+    //    RaveDataType type;
 
-	/* Map RB5 moments to ODIM, e g. corrected horizontal reflectivity */
-	PolarScanParam_setQuantity(param, map_rb5_to_h5_param(rb5_param->sparam));
+    /* Map RB5 moments to ODIM, e g. corrected horizontal reflectivity */
+    PolarScanParam_setQuantity(param, map_rb5_to_h5_param(rb5_param->sparam));
 
-	/* Linear scaling factor, with an example for 8-bit reflectivity */
-	PolarScanParam_setGain(param, rb5_param->data_step);
+    /* Linear scaling factor, with an example for 8-bit reflectivity */
+    PolarScanParam_setGain(param, rb5_param->data_step);
 
-	/* Linear scaling offset, with an example for 8-bit reflectivity */
-	PolarScanParam_setOffset(param, rb5_param->data_range_min);
+    /* Linear scaling offset, with an example for 8-bit reflectivity */
+    PolarScanParam_setOffset(param, rb5_param->data_range_min);
 
-	/* Value for 'no data', ie. unradiated areas, with a convention used for reflectivity */
+    /* Value for 'no data', ie. unradiated areas, with a convention used for reflectivity */
     //left to user to mask by either <dataflag> or <txpower> if available
-	PolarScanParam_setNodata(param, rb5_param->raw_binary_max); 
+    PolarScanParam_setNodata(param, rb5_param->raw_binary_max); 
 
-	/* Value for 'undetected', ie. areas radiated but with no echo, with a convention used for reflectivity */
-	PolarScanParam_setUndetect(param, 0);
+    /* Value for 'undetected', ie. areas radiated but with no echo, with a convention used for reflectivity */
+    PolarScanParam_setUndetect(param, 0);
 
-	/* We'll add appropriate exception handling later */
-	return ret;
+    /* We'll add appropriate exception handling later */
+    return ret;
 }
 
 /*
  * Input object is an empty Toolbox polar scan object and a native RB5 object.
  */
 int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
-	int ret = 0;
-	int i;
-	int np;  /* Number of moments/parameters in this scan of data */
-	RaveCoreObject* object = (RaveCoreObject*)scan;
+    int ret = 0;
+    int i;
+    int np;  /* Number of moments/parameters in this scan of data */
+    RaveCoreObject* object = (RaveCoreObject*)scan;
 
     //rb5_util vars
-	strRB5_PARAM_INFO rb5_param;
-//	static char xpath[MAX_STRING]="\0";
-	static char xpath_bgn[MAX_STRING]="\0";
-	static char iso8601[MAX_STRING]="\0";
-	static char tmp_a[MAX_STRING]="\0";
-	int L_RB5_PARAM_VERBOSE=0;
+    strRB5_PARAM_INFO rb5_param;
+//    static char xpath[MAX_STRING]="\0";
+    static char xpath_bgn[MAX_STRING]="\0";
+    static char iso8601[MAX_STRING]="\0";
+    static char tmp_a[MAX_STRING*4]="\0"; //expanded to accomodate longer sprintf()
+    int L_RB5_PARAM_VERBOSE=0;
 
     //#############################################################################//
-	/* Set select mandatory 'what' attributes. See Table 13 in the ODIM_H5 spec. */
+    /* Set select mandatory 'what' attributes. See Table 13 in the ODIM_H5 spec. */
 
-	sprintf(iso8601,"%s",rb5_info->slice_iso8601_bgn[this_slice]);
-	ret = PolarScan_setStartDate(scan, func_iso8601_2_yyyymmdd(iso8601)); //"YYYYMMDD"
-	ret = PolarScan_setStartTime(scan, func_iso8601_2_hhmmss(iso8601)); //"HHmmss"
+    if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){
+        strcpy(iso8601,rb5_info->slice_iso8601_bgn_low[this_slice]);
+    } else {
+        strcpy(iso8601,rb5_info->slice_iso8601_bgn    [this_slice]);
+    }
+    ret = PolarScan_setStartDate(scan, func_iso8601_2_yyyymmdd(iso8601)); //"YYYYMMDD"
+    ret = PolarScan_setStartTime(scan, func_iso8601_2_hhmmss(iso8601)); //"HHmmss"
 
-	sprintf(iso8601,"%s",rb5_info->slice_iso8601_end[this_slice]);
-	ret = PolarScan_setEndDate(scan, func_iso8601_2_yyyymmdd(iso8601)); //"YYYYMMDD"
-	ret = PolarScan_setEndTime(scan, func_iso8601_2_hhmmss(iso8601)); //"HHmmss"
+    if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){
+        strcpy(iso8601,rb5_info->slice_iso8601_end_est[this_slice]);
+    } else {
+        strcpy(iso8601,rb5_info->slice_iso8601_end    [this_slice]);
+    }
+    ret = PolarScan_setEndDate(scan, func_iso8601_2_yyyymmdd(iso8601)); //"YYYYMMDD"
+    ret = PolarScan_setEndTime(scan, func_iso8601_2_hhmmss(iso8601)); //"HHmmss"
 
     //#############################################################################//
-	/* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
+    /* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
 
     // HOW/RADAR_DATA
     if (strcmp(rb5_info->scan_type,"ele") == 0) { 
-	    ret = addDoubleAttribute(object, "how/elevspeed",rb5_info->slice_antspeed_rpm     [this_slice]);
+        ret = addDoubleAttribute(object, "how/elevspeed",rb5_info->slice_antspeed_rpm     [this_slice]);
     } else {
-	    ret = addDoubleAttribute(object, "how/rpm",      rb5_info->slice_antspeed_rpm     [this_slice]);
+        ret = addDoubleAttribute(object, "how/rpm",      rb5_info->slice_antspeed_rpm     [this_slice]);
     }
 
-	ret = addDoubleAttribute(object, "how/pulsewidth",   rb5_info->slice_pw_microsec      [this_slice]);
-	ret = addDoubleAttribute(object, "how/lowprf",       rb5_info->slice_lo_prf           [this_slice]);
-	ret = addDoubleAttribute(object, "how/highprf",      rb5_info->slice_hi_prf           [this_slice]);
-	ret = addDoubleAttribute(object, "how/radconstH",    rb5_info->slice_radconst_h       [this_slice]);
-	ret = addDoubleAttribute(object, "how/radconstV",    rb5_info->slice_radconst_v       [this_slice]);
+    ret = addDoubleAttribute(object, "how/pulsewidth",   rb5_info->slice_pw_microsec      [this_slice]);
+    ret = addDoubleAttribute(object, "how/lowprf",       rb5_info->slice_lo_prf           [this_slice]);
+    ret = addDoubleAttribute(object, "how/highprf",      rb5_info->slice_hi_prf           [this_slice]);
+    ret = addDoubleAttribute(object, "how/radconstH",    rb5_info->slice_radconst_h       [this_slice]);
+    ret = addDoubleAttribute(object, "how/radconstV",    rb5_info->slice_radconst_v       [this_slice]);
     
-	ret = addDoubleAttribute(object, "how/NI",           rb5_info->slice_nyquist_vel      [this_slice]);
-	ret = addLongAttribute  (object, "how/Vsamples",     rb5_info->slice_num_samples      [this_slice]);
+    ret = addDoubleAttribute(object, "how/NI",           rb5_info->slice_nyquist_vel      [this_slice]);
+    ret = addLongAttribute  (object, "how/Vsamples",     rb5_info->slice_num_samples      [this_slice]);
 
-//	ret = addDoubleAttribute(object, "how/nomTXpower",   ); // n/a
-//	ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
-//	ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
-//	ret = addDoubleAttribute(object, "how/phasediff",    ); // sys_phidp
+//    ret = addDoubleAttribute(object, "how/nomTXpower",   ); // n/a
+//    ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
+//    ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
+//    ret = addDoubleAttribute(object, "how/phasediff",    ); // sys_phidp
 
     // HOW/POLAR_DATA
-	ret = addLongAttribute  (object, "how/scan_index",   this_slice+1);
-	ret = addLongAttribute  (object, "how/scan_count",   rb5_info->n_slices);
+    ret = addLongAttribute  (object, "how/scan_index",   this_slice+1);
+    ret = addLongAttribute  (object, "how/scan_count",   rb5_info->n_slices);
 
     // HOW/QUALITY
-	ret = addStringAttribute(object, "how/binmethod",    "AVERAGE");
+    ret = addStringAttribute(object, "how/binmethod",    "AVERAGE");
     if (strcmp(rb5_info->scan_type,"ele") == 0) { 
-	    ret = addStringAttribute(object, "how/elmethod",     "AVERAGE");
-    	ret = addStringAttribute(object, "how/anglesync",    "elevation");
-    	ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
+        ret = addStringAttribute(object, "how/elmethod",     "AVERAGE");
+        ret = addStringAttribute(object, "how/anglesync",    "elevation");
+        ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
     } else {
-    	ret = addDoubleAttribute(object, "how/astart",       0.0);  /* updated in setRayAttributes() */
-    	ret = addStringAttribute(object, "how/azmethod",     "AVERAGE");
-    	ret = addStringAttribute(object, "how/anglesync",    "azimuth");
-    	ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
+        ret = addDoubleAttribute(object, "how/astart",       0.0);  /* updated in setRayAttributes() */
+        ret = addStringAttribute(object, "how/azmethod",     "AVERAGE");
+        ret = addStringAttribute(object, "how/anglesync",    "azimuth");
+        ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
     }
 
     /* Corrupt scans need to be caught */
@@ -185,7 +193,7 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
             contains(local-name(),'warningstat') or \
             contains(local-name(),'faultstat') \
         ]",this_slice+1);
-    char xpath[MAX_STRING]="\0";
+    char xpath[MAX_STRING+6]="\0"; //expanded to accomodate longer sprintf()
     char attrib_name [MAX_STRING]="\0";
     char attrib_value[MAX_STRING]="\0";
     char fault_msg[MAX_STRING]="\0";
@@ -201,29 +209,29 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         }
     }
     if(strlen(fault_msg) != 0){
-    	ret = addStringAttribute(object, "how/malfunc",   "True");
-	    ret = addStringAttribute(object, "how/radar_msg", fault_msg);
+        ret = addStringAttribute(object, "how/malfunc",   "True");
+        ret = addStringAttribute(object, "how/radar_msg", fault_msg);
     } else {
-    	ret = addStringAttribute(object, "how/malfunc",   "False");
-	    ret = addStringAttribute(object, "how/radar_msg", "No faults");
+        ret = addStringAttribute(object, "how/malfunc",   "False");
+        ret = addStringAttribute(object, "how/radar_msg", "No faults");
     }
 
-	ret = addDoubleAttribute(object, "how/NEZH",         rb5_info->slice_noise_power_h    [this_slice]);
-	ret = addDoubleAttribute(object, "how/NEZV",         rb5_info->slice_noise_power_v    [this_slice]);
+    ret = addDoubleAttribute(object, "how/NEZH",         rb5_info->slice_noise_power_h    [this_slice]);
+    ret = addDoubleAttribute(object, "how/NEZV",         rb5_info->slice_noise_power_v    [this_slice]);
 
-	ret = addStringAttribute(object, "how/clutterType", "GdrxCmOff"); //RB5 manual says "/volume/scan/slice[*]/gdrx_cluttermap" (not used)
-	ret = addStringAttribute(object, "how/clutterMap",  "Off"); // (not used)
+    ret = addStringAttribute(object, "how/clutterType", "GdrxCmOff"); //RB5 manual says "/volume/scan/slice[*]/gdrx_cluttermap" (not used)
+    ret = addStringAttribute(object, "how/clutterMap",  "Off"); // (not used)
 
 // NOTE: these attributes may not exist in the original RB5 raw file, thus check
     if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
     if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
 
-//	ret = addDoubleAttribute(object, "how/nsampleH",    ); // n/a
-//	ret = addDoubleAttribute(object, "how/nsampleV",    ); // n/a
-	ret = addDoubleAttribute(object, "how/SQI",         rb5_info->slice_sqi_threshold    [this_slice]);
-	ret = addDoubleAttribute(object, "how/CSR",         rb5_info->slice_csr_threshold    [this_slice]);
-	ret = addDoubleAttribute(object, "how/LOG",         rb5_info->slice_log_threshold    [this_slice]);
-	ret = addStringAttribute(object, "how/VPRcorr",     "False");
+//    ret = addDoubleAttribute(object, "how/nsampleH",    ); // n/a
+//    ret = addDoubleAttribute(object, "how/nsampleV",    ); // n/a
+    ret = addDoubleAttribute(object, "how/SQI",         rb5_info->slice_sqi_threshold    [this_slice]);
+    ret = addDoubleAttribute(object, "how/CSR",         rb5_info->slice_csr_threshold    [this_slice]);
+    ret = addDoubleAttribute(object, "how/LOG",         rb5_info->slice_log_threshold    [this_slice]);
+    ret = addStringAttribute(object, "how/VPRcorr",     "False");
 
 ///*
     // from <txpower> determine max & avg
@@ -232,8 +240,8 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
     strcpy(req_rayinfo_name,"txpower");
     int idx_req=find_in_string_arr(rb5_info->rayinfo_name_arr,rb5_info->n_rayinfos,req_rayinfo_name);
     if(idx_req != -1) {
-    	sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",this_slice+1,"rayinfo",idx_req+1);
-		rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
+        sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",this_slice+1,"rayinfo",idx_req+1);
+        rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
         void *raw_arr=NULL;
         float *data_arr=NULL;
         return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
@@ -254,7 +262,7 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         } //for (i = 0; i < rb5_param.n_elems_data; i++) {
         if(cnt_pwr > 0.0) avg_pwr=sum_pwr/cnt_pwr;
 
-	    ret = addDoubleAttribute(object, "how/peakpwr",     data_arr[iray_peak_pwr]/1000.); //[kW]
+        ret = addDoubleAttribute(object, "how/peakpwr",     data_arr[iray_peak_pwr]/1000.); //[kW]
         ret = addDoubleAttribute(object, "how/avgpwr",      avg_pwr); //[W]
 
         if(is_rb5_param_dualpol(rb5_param.sparam)) {
@@ -268,14 +276,14 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
     }
 //*/
 
-//	ret = addDoubleAttribute(object, "how/dynrange",    ); // n/a
-//	ret = addDoubleAttribute(object, "how/RAC",         ); // n/a
-//	ret = addStringAttribute(object, "how/BBC",         "False");
-//	ret = addDoubleAttribute(object, "how/PAC",         ); // n/a
-//	ret = addDoubleAttribute(object, "how/S2N",         ); // ?!?
+//    ret = addDoubleAttribute(object, "how/dynrange",    ); // n/a
+//    ret = addDoubleAttribute(object, "how/RAC",         ); // n/a
+//    ret = addStringAttribute(object, "how/BBC",         "False");
+//    ret = addDoubleAttribute(object, "how/PAC",         ); // n/a
+//    ret = addDoubleAttribute(object, "how/S2N",         ); // ?!?
 
     //#############################################################################//
-	/* Set mandatory 'where' attributes, Table 4 in the ODIM_H5 spec. */
+    /* Set mandatory 'where' attributes, Table 4 in the ODIM_H5 spec. */
 
     PolarScan_setRstart (scan, rb5_info->slice_bin_range_bgn_km [this_slice]); /* Kilometers */
     PolarScan_setRscale (scan, rb5_info->slice_bin_range_res_km [this_slice]*1000.); /* Meters */
@@ -290,68 +298,79 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         PolarScan_setElangle(scan, rb5_info->angle_deg_arr[this_slice]*DEG_TO_RAD); /* Radians! Use constant DEG_TO_RAD if necessary. */
     } 
 
-	//this is variable per slice to catch 361 or 721 rays case
-	//non-existent func: PolarScan_setNrays(scan, rb5_info->nrays[this_slice]);
-	//non-existent func: PolarScan_setNbins(scan, rb5_info->nbins[this_slice]);
-	ret = addLongAttribute(object, "where/nrays", rb5_info->nrays[this_slice]);
-	ret = addLongAttribute(object, "where/nbins", rb5_info->nbins[this_slice]);
+    //this is variable per slice to catch 361 or 721 rays case
+    //non-existent func: PolarScan_setNrays(scan, rb5_info->nrays[this_slice]);
+    //non-existent func: PolarScan_setNbins(scan, rb5_info->nbins[this_slice]);
+    ret = addLongAttribute(object, "where/nrays", rb5_info->nrays[this_slice]);
+    ret = addLongAttribute(object, "where/nbins", rb5_info->nbins[this_slice]);
 
-	/* Determine number of moments/parameters per scan */
-	np = rb5_info->n_rawdatas;
+    /* Determine number of moments/parameters per scan */
+    np = rb5_info->n_rawdatas;
 
-	/* Loop through the moments, populating a Toolbox object for each */
-	L_RB5_PARAM_VERBOSE=0;
-	for (i=0;i<np;i++) {
-		PolarScanParam_t* param = RAVE_OBJECT_NEW(&PolarScanParam_TYPE);
+    /* Loop through the moments, populating a Toolbox object for each */
+    L_RB5_PARAM_VERBOSE=0;
+    for (i=0;i<np;i++) {
+        PolarScanParam_t* param = RAVE_OBJECT_NEW(&PolarScanParam_TYPE);
 
-		sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",this_slice+1,"rawdata",i+1);
-		rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
+        sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",this_slice+1,"rawdata",i+1);
+        rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
 
-		ret = populateParam(param, &(*rb5_info), &rb5_param);
+        ret = populateParam(param, &(*rb5_info), &rb5_param);
 
 if(L_RB52ODIM_DEBUG) fprintf(stdout,"Adding rawdata = %s to scan...\n",rb5_param.sparam);
 
-		ret = PolarScan_addParameter(scan, param);
-		RAVE_OBJECT_RELEASE(param);
-	}
+        ret = PolarScan_addParameter(scan, param);
+        RAVE_OBJECT_RELEASE(param);
+    }
 
 
-	/* Detailed ray readout az and el angles and acquisition times. Helper function below. */
-	ret = setRayAttributes(scan, &(*rb5_info), this_slice);
+    /* Detailed ray readout az and el angles and acquisition times. Helper function below. */
+    ret = setRayAttributes(scan, &(*rb5_info), this_slice);
 
-	/* We'll add appropriate exception handling later */
-	return ret;
+    /* We'll add appropriate exception handling later */
+    return ret;
 }
 
 /*
  * Input object is an empty Toolbox core object ((object type to be determined below)).
  */
 int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
-	int ret = 0;
-	int nscans = 0;
+    int ret = 0;
+    int nscans = 0;
 
-	/* Determine number of scans == n_slices */
-	nscans = rb5_info->n_slices;
+    /* Determine number of scans == n_slices */
+    nscans = rb5_info->n_slices;
 
     //rb5_util vars
     static char iso8601[MAX_STRING]="\0";
-	static char tmp_a[MAX_STRING]="\0";
+    static char tmp_a[MAX_STRING]="\0";
 
     //#############################################################################//
-	/*  Top-level 'what' attributes, Table 1 of the ODIM_H5 spec. */
+    /*  Top-level 'what' attributes, Table 1 of the ODIM_H5 spec. */
     
-	ret = addStringAttribute(object, "how/_creator_program", "rb52odim");
-	ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"Rainbow "),rb5_info->rainbow_version));
-	ret = addStringAttribute(object, "how/_orig_sensor_id", rb5_info->sensor_id);
-	ret = addStringAttribute(object, "how/_orig_sensor_name", rb5_info->sensor_name);
+    ret = addStringAttribute(object, "how/_creator_program", "rb52odim");
+    ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"Rainbow "),rb5_info->rainbow_version));
+    ret = addStringAttribute(object, "how/_orig_sensor_id", rb5_info->sensor_id);
+    ret = addStringAttribute(object, "how/_orig_sensor_name", rb5_info->sensor_name);
 
     /* Time is recorded according to object and sweep order:
      * If bottom-up volume or scan, it's the start of the (first/lowest) scan.
      * Otherwise, it's a top-down volume and it's the end of the last/lowest scan. */
-    strcpy(iso8601,rb5_info->slice_iso8601_bgn[0]);
+    if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){
+        strcpy(iso8601,rb5_info->slice_iso8601_bgn_low[0]);
+        strcpy(tmp_a,"True");
+    } else {
+        strcpy(iso8601,rb5_info->slice_iso8601_bgn    [0]);
+        strcpy(tmp_a,"False");
+    }
+    ret = addStringAttribute(object, "how/time_accuracy_downgrade", tmp_a);
     if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
         if (! PolarVolume_isAscendingScans((PolarVolume_t*)object)) {
-            strcpy(iso8601,rb5_info->slice_iso8601_end[nscans-1]);
+            if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){
+                strcpy(iso8601,rb5_info->slice_iso8601_end_est[nscans-1]);
+            } else {
+                strcpy(iso8601,rb5_info->slice_iso8601_end    [nscans-1]);
+            }
         }
     }
 
@@ -457,17 +476,17 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     }
 
     //#############################################################################//
-	/* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
+    /* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
 
     sprintf(tmp_a,"%s%s",
         return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/make")),
         return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/model"))
         );
-	ret = addStringAttribute(object, "how/system", tmp_a); //According to Table 10
+    ret = addStringAttribute(object, "how/system", tmp_a); //According to Table 10
     strcpy(tmp_a,return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/txtype")));
-	ret = addStringAttribute(object, "how/TXtype", tmp_a);
+    ret = addStringAttribute(object, "how/TXtype", tmp_a);
     strcpy(tmp_a,return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/poltype")));
-	ret = addStringAttribute(object, "how/poltype", tmp_a);
+    ret = addStringAttribute(object, "how/poltype", tmp_a);
 
     char gdrx_dp_proc_mode[MAX_STRING]="\0";
     strcpy(gdrx_dp_proc_mode,return_xpath_value(rb5_info->xpathCtx,"(/volume/scan/pargroup)[*][@refid='sdfbase']/gdrx_dp_proc_mode"));
@@ -480,12 +499,12 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     else strcpy(tmp_a,"unmapped");
     if(strcmp(tmp_a,"unmapped") != 0) ret = addStringAttribute(object, "how/polmode", tmp_a);
 
-	ret = addStringAttribute(object, "how/task", rb5_info->scan_name); //"The RB5 task name");
-	ret = addStringAttribute(object, "how/software", "RAINBOW"); //According to Table 11
-	ret = addStringAttribute(object, "how/sw_version", rb5_info->rainbow_version); //"major.minor.veryminor");
-	ret = addStringAttribute(object, "how/simulated", "False");
-	ret = addDoubleAttribute(object, "how/wavelength", rb5_info->sensor_wavelength_cm);
-//	ret = addDoubleAttribute(object, "how/RXbandwidth", ); // n/a
+    ret = addStringAttribute(object, "how/task", rb5_info->scan_name); //"The RB5 task name");
+    ret = addStringAttribute(object, "how/software", "RAINBOW"); //According to Table 11
+    ret = addStringAttribute(object, "how/sw_version", rb5_info->rainbow_version); //"major.minor.veryminor");
+    ret = addStringAttribute(object, "how/simulated", "False");
+    ret = addDoubleAttribute(object, "how/wavelength", rb5_info->sensor_wavelength_cm);
+//    ret = addDoubleAttribute(object, "how/RXbandwidth", ); // n/a
 
     close_xml_buffer(&radar_table);
     
@@ -516,21 +535,21 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
 
 if(L_RB52ODIM_DEBUG) fprintf(stdout,"Done top-level 'how' attributes...\n");
 
-	/* Populate each */
+    /* Populate each */
     int ireqSWEEP=0;
     //fprintf(stdout,"Populating with %2d scans...\n",nscans);
     if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
-	  for (ireqSWEEP=0;ireqSWEEP<nscans;ireqSWEEP++) {
-		PolarScan_t* scan = RAVE_OBJECT_NEW(&PolarScan_TYPE);
-		ret = populateScan((PolarScan_t*)scan, &(*rb5_info), ireqSWEEP);
+      for (ireqSWEEP=0;ireqSWEEP<nscans;ireqSWEEP++) {
+        PolarScan_t* scan = RAVE_OBJECT_NEW(&PolarScan_TYPE);
+        ret = populateScan((PolarScan_t*)scan, &(*rb5_info), ireqSWEEP);
         if(ret != 1) {
           RAVE_OBJECT_RELEASE(scan);
           return -1;
         }
         //fprintf(stdout,"Adding scan = %2d (%4.1f deg) to PVOL...\n",ireqSWEEP,rb5_info->angle_deg_arr[ireqSWEEP]);
-		ret = PolarVolume_addScan((PolarVolume_t*)object, scan);
-		RAVE_OBJECT_RELEASE(scan);
-	  }
+        ret = PolarVolume_addScan((PolarVolume_t*)object, scan);
+        RAVE_OBJECT_RELEASE(scan);
+      }
     } else {
       /* Only one scan to populate */
       //fprintf(stdout,"Adding scan = %2d (%4.1f deg) to SCAN...\n",ireqSWEEP,rb5_info->angle_deg_arr[ireqSWEEP]);
@@ -541,8 +560,8 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Done top-level 'how' attributes...\n");
  
     }
 
-	/* We'll add appropriate exception handling later */
-	return ret;
+    /* We'll add appropriate exception handling later */
+    return ret;
 }
 
 /*
@@ -689,8 +708,8 @@ int is_regular_file(const char *path) {
  */
 int isRainbow5buf(char **inp_buffer) {
 
-	int RETURN_yes = 0;
-	int RETURN_no = -1;
+    int RETURN_yes = 0;
+    int RETURN_no = -1;
 
     char *eol = strchr(*inp_buffer, '\n');
     size_t len=eol-*inp_buffer;
@@ -737,8 +756,8 @@ int isRainbow5buf(char **inp_buffer) {
 //2021-Jan-14: Added gzopen() & gzclose() handling
 int isRainbow5(const char* inp_fname) {
 
-//	int RETURN_yes = 0;
-	int RETURN_no = -1;
+//    int RETURN_yes = 0;
+    int RETURN_no = -1;
 
     gzFile fp = NULL;
     fp = gzopen(inp_fname, "r");
@@ -773,11 +792,15 @@ int isRainbow5(const char* inp_fname) {
  * Input object is an empty Toolbox polar scan object and a native RB5 object.
  */
 int setRayAttributes(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
-	int ret = 0;
-//	long nrays = PolarScan_getNrays(scan); // use rb5_info.nrays
+    int ret = 0;
+//    long nrays = PolarScan_getNrays(scan); // use rb5_info.nrays
 
     static char iso8601_0[MAX_STRING]="\0";
-    sprintf(iso8601_0,"%s",rb5_info->slice_iso8601_bgn[this_slice]);
+    if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){
+        strcpy(iso8601_0,rb5_info->slice_iso8601_bgn_low[this_slice]);
+    } else {
+        strcpy(iso8601_0,rb5_info->slice_iso8601_bgn    [this_slice]);
+    }
     double systime_0=func_iso8601_2_systime(iso8601_0);
 
     //rb5_util vars
@@ -829,7 +852,7 @@ int setRayAttributes(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         RAVE_OBJECT_RELEASE(az_attr1);
         //update "how/astart" with "how/astart" first (lowest) value in "how/startazA"
         //h5dump --attribute=/dataset1/how/astart dummy.h5
-    	ret = addDoubleAttribute((RaveCoreObject*)scan, "how/astart", ddata_arr[0]);
+        ret = addDoubleAttribute((RaveCoreObject*)scan, "how/astart", ddata_arr[0]);
 
         for(i=0;i<this_nrays;i++) ddata_arr[i]=(rb5_info->slice_moving_angle_stop_arr[this_slice])[i];
         RaveAttribute_t* az_attr2 = RaveAttributeHelp_createDoubleArray("how/stopazA", ddata_arr, this_nrays);
@@ -867,7 +890,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Adding rayinfo = %s to scan...\n",rb5_param
 if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         RaveAttribute_t* dataflag_attr = RaveAttributeHelp_createLongArray("how/dataflag", ldata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, dataflag_attr);
-	    RAVE_OBJECT_RELEASE(dataflag_attr);
+        RAVE_OBJECT_RELEASE(dataflag_attr);
         // add comment about dataflag bit encoding
         ret = addStringAttribute((RaveCoreObject*)scan, "how/comment",
             "From RB5_FileFormat_5510.pdf, Sec 2.3.2.1.1: Array 'rayinfo'\n"
@@ -894,17 +917,22 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
         RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, numpulses_attr);
-	    RAVE_OBJECT_RELEASE(numpulses_attr);
+        RAVE_OBJECT_RELEASE(numpulses_attr);
       }else if(strcmp(rb5_param.sparam,"timestamp") == 0){ //EPOCH SECONDS
+        if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){ //populate using estimated elapsed ms
+            double ms_dur_per_ray=(double)rb5_info->slice_dur_secs_est[this_slice]/(double)(this_nrays-1)*1000.;
+            for (i=0;i<this_nrays;i++) data_arr[i]=ms_dur_per_ray*i;
+            reorder_by_iray_0degN(&rb5_param,(void*)(&data_arr));
+        }
         for (i=0;i<this_nrays;i++) ddata_arr[i]=(double)data_arr[i]/1000. + systime_0;
         RaveAttribute_t* startazT_attr = RaveAttributeHelp_createDoubleArray("how/startazT", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, startazT_attr);
-	    RAVE_OBJECT_RELEASE(startazT_attr);
+        RAVE_OBJECT_RELEASE(startazT_attr);
       }else if(strcmp(rb5_param.sparam,"txpower") == 0){ //KILOWATTS
         for (i=0;i<this_nrays;i++) ddata_arr[i]=(double)data_arr[i]/1000.;
         RaveAttribute_t* txpower_attr = RaveAttributeHelp_createDoubleArray("how/TXpower", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, txpower_attr);
-	    RAVE_OBJECT_RELEASE(txpower_attr);
+        RAVE_OBJECT_RELEASE(txpower_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
 //        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
 //        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
@@ -913,7 +941,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
         RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerh", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerh_attr);
-	    RAVE_OBJECT_RELEASE(noisepowerh_attr);
+        RAVE_OBJECT_RELEASE(noisepowerh_attr);
       }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
 //        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
 //        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
@@ -922,7 +950,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
         RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerv", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerv_attr);
-	    RAVE_OBJECT_RELEASE(noisepowerv_attr);
+        RAVE_OBJECT_RELEASE(noisepowerv_attr);
       }
 
       if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
@@ -933,67 +961,67 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
     if (ddata_arr != NULL ) RAVE_FREE(ddata_arr);
     if (ldata_arr != NULL ) RAVE_FREE(ldata_arr);
 
-	/* We'll add appropriate exception handling later */
-	return ret;
+    /* We'll add appropriate exception handling later */
+    return ret;
 }
 
 /*
  * Helper to add a long integer attribute to a Toolbox object.
  */
 int addLongAttribute(RaveCoreObject* object, const char* name, long value) {
-	int ret = 0;
-	RaveAttribute_t* attr;
+    int ret = 0;
+    RaveAttribute_t* attr;
 
-	attr = RaveAttributeHelp_createLong(name, value);
-	ret = addAttribute(object, attr);
+    attr = RaveAttributeHelp_createLong(name, value);
+    ret = addAttribute(object, attr);
 
-	RAVE_OBJECT_RELEASE(attr);
-	return ret;
+    RAVE_OBJECT_RELEASE(attr);
+    return ret;
 }
 
 /*
  * Helper to add a double attribute to a Toolbox object.
  */
 int addDoubleAttribute(RaveCoreObject* object, const char* name, double value) {
-	int ret = 0;
-	RaveAttribute_t* attr;
+    int ret = 0;
+    RaveAttribute_t* attr;
 
-	attr = RaveAttributeHelp_createDouble(name, value);
-	ret = addAttribute(object, attr);
+    attr = RaveAttributeHelp_createDouble(name, value);
+    ret = addAttribute(object, attr);
 
-	RAVE_OBJECT_RELEASE(attr);
-	return ret;
+    RAVE_OBJECT_RELEASE(attr);
+    return ret;
 }
 
 /*
  * Helper to add a string attribute to a Toolbox object.
  */
 int addStringAttribute(RaveCoreObject* object, const char* name, const char* value) {
-	int ret = 0;
-	RaveAttribute_t* attr;
+    int ret = 0;
+    RaveAttribute_t* attr;
 
-	attr = RaveAttributeHelp_createString(name, value);
-	ret = addAttribute(object, attr);
+    attr = RaveAttributeHelp_createString(name, value);
+    ret = addAttribute(object, attr);
 
-	RAVE_OBJECT_RELEASE(attr);
-	return ret;
+    RAVE_OBJECT_RELEASE(attr);
+    return ret;
 }
 
 /*
  * Helper to actually add a preset attribute to a Toolbox object.
  */
 int addAttribute(RaveCoreObject* object, RaveAttribute_t* attr) {
-	int ret = 0;
+    int ret = 0;
 
-	if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
-		ret = PolarVolume_addAttribute((PolarVolume_t*)object, attr);
-	} else if (RAVE_OBJECT_CHECK_TYPE(object, &PolarScan_TYPE)) {
-		ret = PolarScan_addAttribute((PolarScan_t*)object, attr);
-	} else if (RAVE_OBJECT_CHECK_TYPE(object, &PolarScanParam_TYPE)) {
-		ret = PolarScanParam_addAttribute((PolarScanParam_t*)object, attr);
-	} else ret = 1;
+    if (RAVE_OBJECT_CHECK_TYPE(object, &PolarVolume_TYPE)) {
+        ret = PolarVolume_addAttribute((PolarVolume_t*)object, attr);
+    } else if (RAVE_OBJECT_CHECK_TYPE(object, &PolarScan_TYPE)) {
+        ret = PolarScan_addAttribute((PolarScan_t*)object, attr);
+    } else if (RAVE_OBJECT_CHECK_TYPE(object, &PolarScanParam_TYPE)) {
+        ret = PolarScanParam_addAttribute((PolarScanParam_t*)object, attr);
+    } else ret = 1;
 
-	return ret;
+    return ret;
 }
 
 /* END HELPER FUNCTIONS */

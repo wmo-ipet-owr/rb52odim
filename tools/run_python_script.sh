@@ -9,7 +9,7 @@
 #              The Crown (i.e. Her Majesty the Queen in Right of Canada), 2019
 #
 # History:  2009-10-22 Created by Anders Henja
-#	    2016-06-10 Modified by Daniel Michelson for rave_ec
+#       2016-06-10 Modified by Daniel Michelson for rave_ec
 #       2020-08-31 Peter Rodriguez, add PYTHON_BIN check 
 ############################################################
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"

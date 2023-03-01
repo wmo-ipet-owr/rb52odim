@@ -10,6 +10,7 @@
 #rm -rf test/pytest/__pycache__
 #rm */*.so #for src/librb52odim.so & modules/_rb52odim.so
 #make
+#make install
 
 #start in <rb52odim_py3>/test folder
 base_dir=`pwd`/..
@@ -18,6 +19,9 @@ cd ${base_dir}/test
 mkdir tmp
 
 export RB52ODIMCONFIG=${base_dir}/config 
+
+echo Making... REF_H5_TIME_DOWNGRADE
+${base_dir}/utils/rb52odim_singleRB5.py -i org/CASSR_2023020717120300dBZ.vol.gz -o ref/CASSR_2023020717120300dBZ.vol.ref.h5
 
 echo Making... REF_H5_VOL and REF_H5_AZI
 ${base_dir}/utils/rb52odim_singleRB5.py -i org/2016092614304000dBZ.vol -o ref/2016092614304000dBZ.vol.ref.h5

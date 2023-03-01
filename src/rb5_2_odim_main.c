@@ -17,39 +17,29 @@ You should have received a copy of the GNU Lesser General Public License
 along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 ------------------------------------------------------------------------*/
 /**
- * Command-line binary for rb52odim
- * @file
- * @author Daniel Michelson and Peter Rodriguez, Environment Canada
- * @date 2016-08-17
+ * Command-line binary "rb5_2_odim"
+ * @file src/rb5_2_odim_main.c
+ * @author Peter Rodriguez, Environment Canada
+ * @date 2022-08-04
+ *
+ * Compile:
+ *   make -f Makefile.w_rb5_2_odim_main
+ *
+ * Debug:
+ *   valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/2016081612320300dBZ.azi -o dummy.azi.h5
+ *   valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/2016092614304000dBZ.vol -o dummy.vol.h5
+ *   valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/CASSR_2023020717120300dBZ.vol.gz -o dummy.h5 //bad datetimehighaccuracy issue on iSLICE (base-0) = 7,8,9,10
+ *
  */
-//#include <string.h>
-//#include "rave_debug.h"
 
-//#include "rb52odim.h"
+//#include "rave_debug.h"
 #include <rb52odim.h>
 
-/**
- * Command-line rb5_2_odim
- *
- * Compile: make -f Makefile.w_rb5_2_odim_main > make.rb5_2_odim_main.log 2>&1 &
- *
- * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/2016081612320300dBZ.azi -o dummy.azi.h5
- *
- * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2015120916511800dBZ.ele -o dummy.ele.h5
- * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2016081612320300dBZ.azi -o dummy.azi.h5
- * Debug: valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2015120916500500dBZ.azi -o dummy.azi.h5
- *        valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2016092614304000dBZ.vol -o dummy.vol.h5
- *        valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/2016092617103700ALL.vol -o dummy.ALL.vol.h5 > rb5_2_odim.vol.run.txt 2>&1
- *
- */
 int main(int argc,char *argv[]) {
     int RETURN_FAILURE = -1;
     int ret = 0;
     int i;
     const char *ifile=NULL, *ofile=NULL;
-
-    printf("HERE!!!\n");
-    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
 
     if (argc!=5) {
       printf("usage: %s -i RB5_file -o ODIM_H5_file\n", argv[0]);
@@ -73,26 +63,33 @@ int main(int argc,char *argv[]) {
 
 //#############################################################################
 
-// Doesn't handle .gz, replaced by rb52odim.c:isRainbow5buf()
-//    if (isRainbow5(ifile) != 0) {
-//        fprintf(stderr,"ERROR! This is something other than a proper RB5 raw file : %s\n", ifile);
-//        return RETURN_FAILURE;
-//    }
-//    return EXIT_SUCCESS; //forced
+    // hack for command-line version without BALTRAD envvars
+    if(getenv("RB52ODIMCONFIG")==NULL){
+      fprintf(stderr,"Error cannot getenv(\"RB52ODIMCONFIG\")\n");
+      char sPATH[MAX_STRING]="\0";
+      getcwd(sPATH, sizeof(sPATH));
+      strcat(sPATH,"/../config");
+      char sCMD[MAX_STRING]="\0";
+      strcpy(sCMD,"RB52ODIMCONFIG=");
+      strcat(sCMD,sPATH);
+      fprintf(stderr,"Setting envar : %s\n",sCMD);
+      putenv(sCMD);
+    }
 
 //#############################################################################
 
-    // Peter-Rodriguez hack for command-line version
-    if(getenv("RB52ODIMCONFIG")==NULL){
-//      fprintf(stderr,"Error cannot getenv(\"RB52ODIMCONFIG\")\n");
-      char sCWD[MAX_STRING]="\0";
-      getcwd(sCWD, sizeof(sCWD));
-      char sCMD[MAX_STRING]="\0";
-      strcpy(sCMD,"RB52ODIMCONFIG=");
-      strcat(sCMD,sCWD);
-      fprintf(stderr,"Setting: %s to cwd = %s\n","RB52ODIMCONFIG",sCWD);
-      putenv(sCMD);
-    }
+//    /* call this before any of your RAVE code */
+//    Rave_initializeDebugger();
+//    Rave_setDebugLevel(RAVE_SPEWDEBUG);
+
+//#############################################################################
+// from rb52odim.c:getRaveIO()
+//#############################################################################
+
+    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
+    RaveCoreObject* object = NULL;
+    RaveIO_setObject(raveio, object); //init with raveio.object = NULL
+    int rot = Rave_ObjectType_UNDEFINED;
 
 //#############################################################################
 
@@ -126,92 +123,31 @@ int main(int argc,char *argv[]) {
 
 //#############################################################################
 
-    /* call this before any of your RAVE code */
-//    Rave_initializeDebugger();
-//    Rave_setDebugLevel(RAVE_SPEWDEBUG);
-
-//TBD: seg fault
-// improper RAVE lib linking?
-// bbuild make install'd on ubu16 system's 3.5.2 (default, Nov 12 2018, 13:43:14)
-
-    // bbuild/bbuild/packages/rave-py3/librave/toolbox/rave_object.h
-    printf("RaveIO_TYPE = %s\n", RaveIO_TYPE.name);
-    printf("HERE!!!\n");
-    RaveCoreObject* object = RAVE_OBJECT_NEW(&PolarVolume_TYPE);
-    printf("HERE!!!\n");
-    printf("HERE!!!\n");
-//    RaveIO_t* raveio = RAVE_OBJECT_NEW(&RaveIO_TYPE);
-    printf("HERE!!!\n");
-
-//    RaveCoreObject* object = NULL;
-//    RaveIO_setObject(raveio, object); //init with raveio.object = NULL
-//    int rot = Rave_ObjectType_UNDEFINED;
-
-//#############################################################################
-
     /* If the RB5 file contains a scan or a pvol, create equivalent object */
-    int rot = objectTypeFromRB5(rb5_info);
+    rot = objectTypeFromRB5(rb5_info);
     if (rot == Rave_ObjectType_PVOL) {
       object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarVolume_TYPE);
     } else if (rot == Rave_ObjectType_SCAN) {
       object = (RaveCoreObject*)RAVE_OBJECT_NEW(&PolarScan_TYPE);
     } else {
-//      return RETURN_FAILURE;
-//      return raveio;
+      return RETURN_FAILURE;
     }
-    printf("HERE!!!\n");
 
     /* Map RB5 object(s) to Toolbox ones. */
     ret = populateObject(object, &rb5_info);
-
-    /* Set the object into the I/O container and write an HDF5 file */
-    RaveIO_setObject(raveio, object);
-    ret = RaveIO_save(raveio, ofile);
-    RaveIO_close(raveio);
-
-    //spoof /what/object='ELEV'
-    if(strcmp(rb5_info.scan_type,"ele") == 0){
-        char* H5_string=NULL;
-        char* H5_path=NULL;
-
-        //rave_io.c: RaveIO_save()
-        RaveIO_setFilename(raveio, ofile);
-        printf("Filename = '%s\n", raveio->filename);
-        printf("HL_isHDF5File = %d\n", HL_isHDF5File(raveio->filename));
-
-        HL_NodeList* nodelist = NULL;
-        nodelist = HLNodeList_read(raveio->filename);
-        HLNodeList_selectAllNodes(nodelist);
-        HLNodeList_fetchMarkedNodes(nodelist);
-
-        H5_path="/what/version";
-        RaveHL_getStringValue(nodelist, &H5_string, H5_path);
-        printf("%s = %s\n", H5_path, H5_string);
-        
-        H5_path="/what/object";
-        RaveHL_getStringValue(nodelist, &H5_string, H5_path);
-        printf("%s = %s\n", H5_path, H5_string);
-
-        //rave_hlhdf_utilities.c: RaveHL_getStringValue()
-        static const char value[]="ELEV";
-        HL_Node* node = NULL;
-        node = HLNodeList_getNodeByName(nodelist, H5_path);
-        HLNode_setScalarValue(node, strlen(value) + 1, (unsigned char*)value, "string", -1);
-
-        RaveHL_getStringValue(nodelist, &H5_string, H5_path);
-        printf("%s = %s\n", H5_path, H5_string);
-
-        HLNodeList_setFileName(nodelist, raveio->filename);
-        HLNodeList_write(nodelist, raveio->property, raveio->compression);
-        HLNodeList_free(nodelist);
-    }
-
-
-    RAVE_OBJECT_RELEASE(raveio);
-    RAVE_OBJECT_RELEASE(object);
-
     close_rb5_info(&rb5_info);
     xmlCleanupParser(); // free globals in main() only for thread safety & valgrind
+
+    /* Set the object into the I/O container */
+    RaveIO_setObject(raveio, object);
+    RAVE_OBJECT_RELEASE(object);
+
+//#############################################################################
+
+    /* write to ODIM_H5 file */
+    ret = RaveIO_save(raveio, ofile);
+    RaveIO_close(raveio);
+    RAVE_OBJECT_RELEASE(raveio);
 
     return ret;
 }

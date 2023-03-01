@@ -5,6 +5,7 @@
  *
  * compile only: gcc -g -c time_utils.c -o time_utils.o
  * 
+ * 2023-02-03:  PR  simpify strftime input for iso8601, casting (double)systime to (long int)time_t truncates millisec
  * 2022-01-13:  PR  use timegm() instead of mktime() to use UTC not OS local timezone (TZ env var)
  *                  tm_struct should not round by millisec, for (iso8601 -> systime -> iso8601)
  * 2016-09-19:  PR  new subroutines,
@@ -20,19 +21,6 @@
  */
 
 #include "time_utils.h"
-
-long int cast_systime_2_time_t(double systime){
-
-    //note: time_t doesn't handle millisecs, a long int not a double var
-    //any millisecs shall increase the systime_t
-    int milli=(systime-floor(systime))*1000.;
-    if(milli != 0) {
-      return (time_t) systime+1;
-    } else {
-      return (time_t) systime;
-    }
-
-}
 
 //#############################################################################
 struct tm func_iso8601_2_tm_struct(char *inp_iso8601) {
@@ -108,7 +96,7 @@ char* func_iso8601_2_yyyymmddhhmmss(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=cast_systime_2_time_t(systime);
+    time_t systime_t=systime;
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%Y%m%d%H%M%S",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -119,7 +107,7 @@ char* func_iso8601_2_yyyymmdd(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=cast_systime_2_time_t(systime);
+    time_t systime_t=systime;
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%Y%m%d",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -130,7 +118,7 @@ char* func_iso8601_2_hhmmss(char* iso8601) {
 
     static char this_iso8601_string[MAX_ISO8601_STRING+1]="\0";
     double systime=func_iso8601_2_systime(iso8601);
-    time_t systime_t=cast_systime_2_time_t(systime);
+    time_t systime_t=systime;
     strftime(this_iso8601_string,MAX_ISO8601_STRING,"%H%M%S",gmtime(&systime_t));
     return(this_iso8601_string);
 
@@ -139,11 +127,11 @@ char* func_iso8601_2_hhmmss(char* iso8601) {
 //#############################################################################
 char* func_iso8601_2_urpvalid(char* inp_iso8601, int L_ROUNDING, int minute_res) {
     // L_ROUNDING=0=flooring, 1=rounding
+    //note: time_t doesn't handle millisecs, not a double var
 
-    time_t inp_systime=cast_systime_2_time_t(func_iso8601_2_systime(inp_iso8601));
+    time_t inp_systime=func_iso8601_2_systime(inp_iso8601);
     time_t nINTERVAL_SECs=minute_res*60;
     time_t out_systime;
-
     if(L_ROUNDING){ //rounding
         fprintf(stdout,"  ROUNDING %s within %ld sec\n",inp_iso8601,nINTERVAL_SECs);
         double d_tmpa=(inp_systime+(nINTERVAL_SECs/2.))/nINTERVAL_SECs;

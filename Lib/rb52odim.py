@@ -83,9 +83,18 @@ def roundDT(DATE, TIME, INTERVAL=ACQUISITION_UPDATE_TIME):
 # @param string file name of input file
 # @param string file name of output file
 def singleRB5(inp_fullfile, out_fullfile=None, return_rio=False):
+    TMPFILE = False
+    validate(inp_fullfile)
+    orig_ifile = copy(inp_fullfile)
+    if mimetypes.guess_type(inp_fullfile)[1] == 'gzip':
+        inp_fullfile = gunzip(inp_fullfile)
+        TMPFILE = True
     if not _rb52odim.isRainbow5(inp_fullfile):
-        raise IOError("%s is not a proper RB5 raw file" % inp_fullfile)
+        raise IOError("%s is not a proper RB5 raw file" % orig_ifile)
     rio = _rb52odim.readRB5(inp_fullfile)
+
+    if TMPFILE:
+        os.remove(inp_fullfile)
 
     if out_fullfile:
         rio.save(out_fullfile)
@@ -420,7 +429,7 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                 if(hasattr(scan,'beamV')): pvol.beamwV = scan.beamwV
 
                 pvol.addAttribute("how/task", taskname)
-       	        for s_attrib in [
+                for s_attrib in [
                     "how/TXtype",
                     "how/beamwH", #optional
                     "how/beamwV", #optional
@@ -431,6 +440,7 @@ def mergeOdimScans2Pvol(rio_arr, out_fullfile=None, return_rio=False, interval=N
                     "how/system",
                     "how/wavelength",
                     "how/comment",
+                    "how/time_res_downgrade",
                     ]:
                     if s_attrib in scan.getAttributeNames():
                         pvol.addAttribute(s_attrib, scan.getAttribute(s_attrib))
