@@ -53,38 +53,39 @@ TOP_IGNORE=[
           ,'how/system'
           ,'how/wavelength'
           ,'how/comment'
+          ,'how/time_accuracy_downgrade'
           ]
 
 # Not needed because RAVE either assigns these automagically, or they are just not relevant
-IGNORE = [
+RAVE_IGNORE = [
     'what/version',
     'what/object', 
-    'how/_orig_file_format',
-    'how/noisepowerh', #accept both raw (long) or processed (double)
-    'how/noisepowerv', #accept both raw (long) or processed (double)
-    ] + TOP_IGNORE
+    'how/scan_count',
+    ]
+
+IGNORE = RAVE_IGNORE + TOP_IGNORE
 
 def validateAttributes(utest, obj, ref_obj):
     for aname in ref_obj.getAttributeNames():
         if aname not in IGNORE:
             ref_attr = ref_obj.getAttribute(aname)
+            if aname not in obj.getAttributeNames():
+                print('No such attribute... aname : '+aname)
+#                import pdb; pdb.set_trace()
             attr = obj.getAttribute(aname)
-            if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
-                utest.assertTrue(np.array_equal(attr, ref_attr))
-#                try: #nicer failure reporting
-#                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-5, atol=0) #for no remake of ref files (numpy v1.16)
-#                except:
-#                    print('AssertionError: aname : '+aname)
-            else:
-                try:
+            try:
+                if isinstance(ref_attr, np.ndarray):  # Arrays get special treatment
+                    np.testing.assert_allclose(attr, ref_attr, rtol=1e-7, atol=0)
+                elif isinstance(ref_attr, float):
+                    utest.assertAlmostEqual(attr, ref_attr) #default 7 decimal places
+                else:
                     utest.assertEqual(attr, ref_attr)
-                except AssertionError as e:
-                    print('AssertionError: aname : '+aname)
-                    print('ref_attr : ', ref_attr)
-                    print('    attr : ',     attr)
-#                    import pdb; pdb.set_trace()
-#                    utest.fail(str(e))
-
+            except AssertionError as e:
+               print('AssertionError: aname : '+aname)
+               print('ref_attr : ', ref_attr)
+               print('    attr : ',     attr)
+#               import pdb; pdb.set_trace()
+#               utest.fail(str(e))
 
 def validateTopLevel(utest, obj, ref_obj):
     utest.assertEqual(obj.source, ref_obj.source)
@@ -116,7 +117,7 @@ def validateScan(utest, scan, ref_scan):
     utest.assertEqual(scan.rscale, ref_scan.rscale)
     utest.assertEqual(scan.rstart, ref_scan.rstart)
     for pname in ref_scan.getParameterNames():
-#        print 'pname : '+pname
+        #print('pname : '+pname)
         utest.assertEqual(scan.hasParameter(pname), 
                            ref_scan.hasParameter(pname))
         param = scan.getParameter(pname)
@@ -141,13 +142,19 @@ def validateMergedPvol(self, new_pvol, iSCAN, ref_RB5_TARBALL):
 
 
 class rb52odimTest(unittest.TestCase):
+    CORRUPT_RB5_VOL = "../org/CASSR_2019062019480300RhoHV.vol.gz" # INCONSISTENT rb5_param->n_elems_data = 360 vs. n_elems_data = 180
     BAD_RB5_VOL  = "../org/2008053002550300dBZ.vol" #volume version="5.22.6"
     GOOD_RB5_VOL = "../org/2016092614304000dBZ.vol" #volume version="5.43.11"
     GOOD_RB5_AZI = "../org/2016081612320300dBZ.azi" #volume version="5.43.11"
     NEW_H5_VOL = "../new/2016092614304000dBZ.vol.new.h5"
     NEW_H5_AZI = "../new/2016081612320300dBZ.azi.new.h5"
     REF_H5_VOL = "../ref/2016092614304000dBZ.vol.ref.h5"  # Assumes that these reference files are ODIM compliant
-    REF_H5_AZI = "../ref/2016081612320300dBZ.azi.ref.h5"  
+    REF_H5_AZI = "../ref/2016081612320300dBZ.azi.ref.h5"
+
+    #Note: these have inconsistent lo- vs. hi-res time! Flagged by rb5_info->L_TIME_ACCURACY_DOWNGRADE
+    #./rb5_2_odim -i ../test/org/Dopvol1_A.azi/2015120916500500dBuZ.azi -o dummy.h5
+    #2:   <scan datetimehighaccuracy="2015-12-09T16:50:06.136" name="Dopvol1_A.azi" time="16:50:05" date="2015-12-09">
+    #157:         <slicedata datetimehighaccuracy="2015-12-09T16:50:06.136" time="16:50:05" date="2015-12-09">
     FILELIST_RB5 = [\
         "../org/Dopvol1_A.azi/2015120916500500dBuZ.azi",\
         "../org/Dopvol1_A.azi/2015120916500500dBZ.azi",\
@@ -161,6 +168,15 @@ class rb52odimTest(unittest.TestCase):
         ] #volume version="5.43.10"
     NEW_H5_FILELIST = "../new/caxah_dopvol1a_20151209T1650Z.by_filelist.new.h5"
     REF_H5_FILELIST = "../ref/caxah_dopvol1a_20151209T1650Z.by_filelist.ref.h5"
+    #./rb5_2_odim -i ../test/org/CASSR_2023020717120300dBZ.vol.gz -o dummy.h5
+    #bad datetimehighaccuracy issue on iSLICE (base-0) = 7,8,9,10
+    #756:         <slicedata datetimehighaccuracy="2023-02-07T17:14:10.669" stopdatetimehighaccuracy="2023-02-07T17:14:22.356" time="17:13:38" date="2023-02-07">
+    #822:         <slicedata datetimehighaccuracy="2023-02-07T17:14:23.785" stopdatetimehighaccuracy="2023-02-07T17:14:35.473" time="17:13:51" date="2023-02-07">
+    #888:         <slicedata datetimehighaccuracy="2023-02-07T17:14:06.097" stopdatetimehighaccuracy="2023-02-07T17:14:37.064" time="17:14:04" date="2023-02-07">
+    INP_RB5_TIME_DOWNGRADE = "../org/CASSR_2023020717120300dBZ.vol.gz"
+    NEW_H5_TIME_DOWNGRADE  = "../new/CASSR_2023020717120300dBZ.vol.new.h5"
+    REF_H5_TIME_DOWNGRADE  = "../ref/CASSR_2023020717120300dBZ.vol.ref.h5"
+
     RB5_TARBALL_DOPVOL1A = "../org/caxah_dopvol1a_20151209T1650Z.azi.tar.gz"
     RB5_TARBALL_DOPVOL1B = "../org/caxah_dopvol1b_20151209T1650Z.azi.tar.gz"
     RB5_TARBALL_DOPVOL1C = "../org/caxah_dopvol1c_20151209T1650Z.azi.tar.gz"
@@ -198,6 +214,22 @@ class rb52odimTest(unittest.TestCase):
     def testIsGoodRB5gzInput(self):
         status = _rb52odim.isRainbow5(self.CASRA_AZI_dBZ)
         self.assertTrue(status)
+
+    #2021-Oct-08: corrupt detection should return rio.object=pyNone
+    def testModuleReadRB5Corrupt(self):
+        rio = _rb52odim.readRB5(self.CORRUPT_RB5_VOL)
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
+
+    def testSingleRB5Corrupt(self):
+        rio = rb52odim.singleRB5(self.CORRUPT_RB5_VOL, return_rio=True)
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
+
+    def testReadRB5Corrupt(self):
+        rio = rb52odim.readRB5([self.CORRUPT_RB5_VOL])
+        self.assertIsNone(rio.object)
+        self.assertTrue(rio.objectType is _rave.Rave_ObjectType_UNDEFINED)
 
     def testReadRB5Azi(self):
         rio = _rb52odim.readRB5(self.GOOD_RB5_AZI)
@@ -242,6 +274,20 @@ class rb52odimTest(unittest.TestCase):
             ref_scan = ref_pvol.getScan(i)
             validateScan(self, new_scan, ref_scan)
         os.remove(self.NEW_H5_VOL)
+
+    def testTimeDowngradeRB5Vol(self):
+        rb52odim.singleRB5(self.INP_RB5_TIME_DOWNGRADE,out_fullfile=self.NEW_H5_TIME_DOWNGRADE)
+        new_rio = _raveio.open(self.NEW_H5_TIME_DOWNGRADE)
+        ref_rio = _raveio.open(self.REF_H5_TIME_DOWNGRADE)
+        self.assertTrue(new_rio.objectType is _rave.Rave_ObjectType_PVOL)
+        new_pvol, ref_pvol = new_rio.object, ref_rio.object
+        self.assertEqual(new_pvol.getNumberOfScans(), ref_pvol.getNumberOfScans())
+        validateTopLevel(self, new_pvol, ref_pvol)
+        for i in range(new_pvol.getNumberOfScans()):
+            new_scan = new_pvol.getScan(i)
+            ref_scan = ref_pvol.getScan(i)
+            validateScan(self, new_scan, ref_scan)
+        os.remove(self.NEW_H5_TIME_DOWNGRADE)
 
     def testCombineRB5Files(self):
         rb52odim.combineRB5(self.FILELIST_RB5, out_fullfile=self.NEW_H5_FILELIST)
@@ -348,6 +394,16 @@ class rb52odimTest(unittest.TestCase):
         for pname in ref.getParameterNames():
             if pname != 'DBZH':
                 ref.removeParameter(pname)
+        #REF_CASRA_H5_SCAN built via compileScanParameters()
+        #so drop all/any attribs added by expand_txpower_by_pol()
+        anames = ref.getAttributeNames()
+        aprefix_list=('dual-pol_ single-pol_').split(' ')
+        aroot_list=('TXpower peakpwr avgpwr').split(' ')
+        for aprefix in aprefix_list:
+            for aroot in aroot_list:
+                new_aname='how/'+aprefix+aroot
+                if new_aname in anames:
+                    ref.removeAttribute(new_aname)
         validateScan(self, scan, ref)
 
     def testCompileScanParameters(self):
@@ -369,6 +425,10 @@ class rb52odimTest(unittest.TestCase):
 
     def testReadRB5(self):
         rio = rb52odim.readRB5([self.CASRA_AZI_dBZ])
+        self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
+
+    def testReadRB5NotAList(self):
+        rio = rb52odim.readRB5(self.CASRA_AZI_dBZ)
         self.assertTrue(rio.objectType, _rave.Rave_ObjectType_SCAN)
 
     def testCompileVolumeFromVolumes_vs_CombineRB5FilesReturnRIO(self):

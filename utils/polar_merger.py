@@ -71,7 +71,7 @@ class polar_merger(object):
       print("Processing : %s" % f)
       rio = _raveio.open(f)
       if not rio.objectType in (_rave.Rave_ObjectType_PVOL, _rave.Rave_ObjectType_SCAN):
-        raise TypeError, "Can only merge volumes and scans"
+        raise TypeError("Can only merge volumes and scans")
       objs.append(rio.object)
     
     return self.merge(objs)
@@ -86,7 +86,7 @@ class polar_merger(object):
         dtstr=objdtstr
 
       if source != obj.source or dtstr != objdtstr:
-        raise TypeError, "source, date and time must be identical when merging"
+        raise TypeError("source, date and time must be identical when merging")
 
     self._verify_elangles(robjs)
 
@@ -124,7 +124,7 @@ class polar_merger(object):
         if elangle is None:
           elangle = po.elangle
         if po.elangle != elangle:
-          raise TypeError, "When merging scans elevation angles between files must be same."
+          raise TypeError("When merging scans elevation angles between files must be same.")
 
   def _merge_files(self, pos):
     result = None
@@ -149,7 +149,7 @@ class polar_merger(object):
   #
   def _add_object_to(self, srco, tgto):
     if _polarvolume.isPolarVolume(srco) and _polarscan.isPolarScan(tgto):
-      raise TypeError, "Can not merge a volume into a scan"
+      raise TypeError("Can not merge a volume into a scan")
 
     # Is srco is a polarvolume, we use a recursive back with the individual scans    
     if _polarvolume.isPolarVolume(srco):

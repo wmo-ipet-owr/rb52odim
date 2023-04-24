@@ -7,7 +7,7 @@ Environment and Climate Change Canada
 This is an add-on package for weather radar data processing with the BALTRAD 
 Toolbox, a k a RAVE.
 
-rb52odim provides functionality for reading SELEX Rainbow 5 sweep (azi) and 
+rb52odim provides functionality for reading LEONARDO/SELEX Rainbow 5 sweep (azi) and
 volume (vol) files, merging variables (moments) from different files into a
 single PolarScanCore or PolarVolumeCore object for processing, and writing the 
 results to ODIM_H5.

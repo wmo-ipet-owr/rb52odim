@@ -44,7 +44,9 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
 #include <ctype.h> //for tolower() & isalnum()
 #include <sys/stat.h> //stat()
 
-#include <math.h> //log10()
+#include <math.h> //log10(), pow()
+#define kW_2_dBm(x) (x == 0.0 ? 0.0 : (10.0 * log10(x * 1000.)) + 30.0)
+#define dBm_2_kW(x) (x == 0.0 ? 0.0 : pow(10.0, (x - 30.0) / 10.0) / 1000.0)
 
 #define L_RB52ODIM_DEBUG 0
 
@@ -81,6 +83,9 @@ int addAttribute(RaveCoreObject* object, RaveAttribute_t* attr);
 
 #include "rave_hlhdf_utilities.h"
 
+//rave-py3/librave/toolbox/rave_types.h:38:  RaveIO_ODIM_Version_2_4 = 4,        /**< ODIM 2.4, The default version */
+
+//from rave-py3/librave/toolbox/rave_io.c
 /**
  * Defines the structure for the RaveIO in a volume.
  */
@@ -95,5 +100,12 @@ struct _RaveIO_t {
   HL_FileCreationProperty* property;       /**< the file creation properties */
   char* bufrTableDir;                      /**< the bufr table dir */
 };
+
+
+///*@{ Private functions */
+//static int RaveIO_constructor(RaveCoreObject* obj){
+//...
+//  raveio->version = RaveIO_ODIM_Version_2_4;
+//  raveio->h5radversion = RaveIO_ODIM_H5rad_Version_2_4;
 
 #endif

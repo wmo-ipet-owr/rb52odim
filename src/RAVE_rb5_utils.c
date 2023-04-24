@@ -47,30 +47,6 @@ size_t uncompress_this_blob(unsigned char *buf, unsigned char** return_uncompres
 
 //#############################################################################
 
-char *get_xpath_iso8601_attrib(const xmlXPathContextPtr xpathCtx, char *xpath_bgn){
-    // expects trailing "/" 
-
-    char xpath[MAX_STRING]="\0";
-    static char iso8601[MAX_STRING]="\0";
-    
-    if(get_xpath_size(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@datetimehighaccuracy")) == 1){
-      strcpy(iso8601,return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@datetimehighaccuracy")));
-      strncpy(iso8601+10," ",1); //blank T-delimiter
-    } else {
-      if(get_xpath_size(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@date")) ||
-         get_xpath_size(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@time")) == 1) {
-        sprintf(iso8601,"%s %s",
-          return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@date")),
-          return_xpath_value(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"@time")));
-      }
-    }
-    //fprintf(stdout,"xpath = %s, iso8601=%s\n",xpath,iso8601);
-    return(iso8601);
-
-}
-
-//#############################################################################
-
 size_t get_blobid_buffer(strRB5_INFO *rb5_info, int req_blobid, unsigned char** return_uncompressed_blob) {
 
     size_t EXIT_NULL_VAL=0;
@@ -166,13 +142,13 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
     strcpy(sparam,rb5_param->sparam);
     size_t n_elems_data    =rb5_param->n_elems_data;
     size_t raw_binary_depth=rb5_param->raw_binary_depth;
-    size_t raw_binary_min;
-    size_t raw_binary_max;
-    size_t raw_binary_width;
-    float data_range_min   =rb5_param->data_range_min;
-    float data_range_max   =rb5_param->data_range_max;
-    float data_range_width;
-    float data_step;
+    size_t raw_binary_min=-1L;
+    size_t raw_binary_max=-1L;
+    size_t raw_binary_width=-1L;
+    float data_range_min=-1;
+    float data_range_max=-1;
+    float data_range_width=-1;
+    float data_step=-1;
     float NODATA_val=-99;
 
     size_t i;
@@ -232,18 +208,8 @@ void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, flo
         raw_binary_min=1L;
         raw_binary_max=(1L<<raw_binary_depth)-1;
         raw_binary_width=raw_binary_max-raw_binary_min;
-
-        //removed special param packing check, 2017-Mar-23
-        // we found KDP have variable data range!
-        // using rb5_param->data_range_min|max defaults (set in var declaration above)
-        //if (strcmp(conversion, "kdp_data") == 0) {
-        //    data_range_min=-20.0;
-        //    data_range_max=+20.0;
-        //} else if (strcmp(conversion, "phidp_data") == 0) {
-        //    data_range_min=  0.0;
-        //    data_range_max=360.0;
-        //}
-        
+        data_range_min=rb5_param->data_range_min;
+        data_range_max=rb5_param->data_range_max;
         data_range_width=data_range_max-data_range_min;
         data_step=data_range_width/raw_binary_width; //127.0/254=0.5 for dBZ
         if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  data_step = %f\n",data_step);
@@ -290,7 +256,7 @@ size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_par
     size_blob=get_blobid_buffer(&(*rb5_info), blobid, &blob_buffer);
     if (blob_buffer == NULL) {
       fprintf(stdout,"ERROR: blobid = %ld NOT FOUND!!!\n",blobid);
-      return(EXIT_NULL_VAL);
+      return EXIT_NULL_VAL;
     }
 
     n_elems_data=size_blob/data_bytesize;
@@ -332,7 +298,7 @@ size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_par
     if(rb5_param->n_elems_data != n_elems_data){
         fprintf(stdout,"  INCONSISTENT rb5_param->n_elems_data = %ld\n",rb5_param->n_elems_data);
         fprintf(stdout,"  INCONSISTENT n_elems_data = %ld\n",n_elems_data);
-        return(EXIT_FAILURE);
+        return EXIT_NULL_VAL;
     }
     rb5_param->n_elems_data=n_elems_data;
 
@@ -562,7 +528,7 @@ if(L_DEBUG_OUTPUT_2) fprintf(stdout,"ifoundSLICE = %2d : %s = %s\n",ifoundSLICE,
 int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
     const xmlXPathContextPtr xpathCtx=rb5_info->xpathCtx;
-    char xpath[MAX_STRING]="\0";
+    char xpath[MAX_STRING+6]="\0"; //expanded to accomodate longer sprintf()
     char xpath_bgn[MAX_STRING]="\0";
 
     char stmpa[MAX_STRING]="\0";
@@ -614,7 +580,7 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
     strcpy(rb5_info->xml_block_type   ,return_xpath_value(xpathCtx,"/volume/@type"));
     strcpy(rb5_info->xml_block_iso8601,return_xpath_value(xpathCtx,"/volume/@datetime"));
-    strncpy(rb5_info->xml_block_iso8601+10," ",1); //blank T-delimiter
+    rb5_info->xml_block_iso8601[10]=' '; //blank T-delimiter
     if(L_VERBOSE){
         fprintf(stdout,"%-32s = %s\n", "rb5_info->rainbow_version"  , rb5_info->rainbow_version);
         fprintf(stdout,"%-32s = %s\n", "rb5_info->xml_block_name"   , rb5_info->xml_block_name);
@@ -695,8 +661,14 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
     int L_RB5_PARAM_QUIET=0;
     int L_RB5_PARAM_VERBOSE=L_VERBOSE;
 
+    rb5_info->L_TIME_ACCURACY_DOWNGRADE=0; //for datetimehighaccuracy issue
+
     //init
     rb5_info->iray_0degN[this_slice]=-1;
+
+    // get first slice acquisition time for get_rb5_param_info()
+    strcpy(rb5_info->slice_iso8601_bgn      [this_slice],      get_xpath_slice_attrib(xpathCtx,this_slice,"/slicedata/@datetimehighaccuracy"));
+           rb5_info->slice_iso8601_bgn      [this_slice][10]=' '; //blank T-delimiter
 
     //RAYINFO (keep rayinfo_name_arr only)
     sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)",this_slice+1,"rayinfo");
@@ -757,8 +729,14 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
         sprintf(xpath_bgn,"(/volume/scan/slice)[%2d]",this_slice+1);
         // Note: using get_xpath_slice_attrib() to cycle thru 0th slice upward
-        strcpy(rb5_info->slice_iso8601_bgn      [this_slice],get_xpath_iso8601_attrib(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/slicedata/")));
-        get_slice_end_iso8601(&(*rb5_info),      this_slice);
+
+        strcpy(rb5_info->slice_iso8601_bgn_low  [this_slice],      get_xpath_slice_attrib(xpathCtx,this_slice,"/slicedata/@date"));
+        strcat(rb5_info->slice_iso8601_bgn_low  [this_slice],      " ");
+        strcat(rb5_info->slice_iso8601_bgn_low  [this_slice],      get_xpath_slice_attrib(xpathCtx,this_slice,"/slicedata/@time"));
+
+        strcpy(rb5_info->slice_iso8601_bgn      [this_slice],      get_xpath_slice_attrib(xpathCtx,this_slice,"/slicedata/@datetimehighaccuracy"));
+               rb5_info->slice_iso8601_bgn      [this_slice][10]=' '; //blank T-delimiter
+
                rb5_info->angle_deg_arr          [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/posangle"));
                rb5_info->slice_nyquist_vel      [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/dynv/@max"));
                rb5_info->slice_nyquist_wid      [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/dynw/@max"));
@@ -800,6 +778,10 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
                rb5_info->slice_log_threshold    [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/log"));
                rb5_info->slice_noise_power_h    [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/noise_power_dbz"));
                rb5_info->slice_noise_power_v    [this_slice]= atof(get_xpath_slice_attrib(xpathCtx,this_slice,"/noise_power_dbz_dpv"));
+
+        if (get_slice_end_iso8601(&(*rb5_info),this_slice) != EXIT_SUCCESS){ //needs rb5_info->slice_antspeed_deg_sec [this_slice]
+            return EXIT_FAILURE;
+        }
 
         //NOTE: since Rainbow v5.51 (re: CWRRP), radconst is a scalar
         static char rspdphradconst[MAX_STRING]="\0";
@@ -847,16 +829,43 @@ int populate_rb5_info(strRB5_INFO *rb5_info, int L_VERBOSE){
 
         //needed angle_deg_arr & slice_ray_angle_res_deg
         //calculate moving and fixed average ray readbacks
-        get_slice_mid_angle_readbacks(&(*rb5_info),this_slice);
+        if (get_slice_mid_angle_readbacks(&(*rb5_info),this_slice) != EXIT_SUCCESS){
+            return EXIT_FAILURE;
+        }
         //get iray_0degN, updates rb5_info->slice_moving_angle_arr
         get_slice_iray_0degN(&(*rb5_info),this_slice);
 
+        // Consistency check for datetimehighaccuracy issue
+        double slice_systime_bgn_low=func_iso8601_2_systime(rb5_info->slice_iso8601_bgn_low[this_slice]);
+        double slice_systime_bgn    =func_iso8601_2_systime(rb5_info->slice_iso8601_bgn    [this_slice]);
+        double slice_systime_end_est=func_iso8601_2_systime(rb5_info->slice_iso8601_end_est[this_slice]);
+        double slice_systime_end    =func_iso8601_2_systime(rb5_info->slice_iso8601_end    [this_slice]);
+        double slice_systime_bgn_diff=fabs(slice_systime_bgn - slice_systime_bgn_low);
+        double slice_systime_end_diff=fabs(slice_systime_end - slice_systime_end_est);
+        double readback_time_diff_sec_threshold = 1.0;
+        if((slice_systime_bgn_diff >= readback_time_diff_sec_threshold) ||
+           (slice_systime_end_diff >= readback_time_diff_sec_threshold)){
+            rb5_info->L_TIME_ACCURACY_DOWNGRADE=1; //flag for setRayAttributes() setting "how/startazT"
+            if(L_VERBOSE){
+                fprintf(stdout,"Inconsistent datetimehighaccuracy...\n");
+                fprintf(stdout,"%-32s = %s\n"    , "rb5_info->slice_iso8601_bgn_low"    , rb5_info->slice_iso8601_bgn_low [this_slice]);
+                fprintf(stdout,"%-32s = %s\n"    , "rb5_info->slice_iso8601_bgn"        , rb5_info->slice_iso8601_bgn     [this_slice]);
+                fprintf(stdout,"%-32s = %s\n"    , "rb5_info->slice_iso8601_end_est"    , rb5_info->slice_iso8601_end_est [this_slice]);
+                fprintf(stdout,"%-32s = %s\n"    , "rb5_info->slice_iso8601_end"        , rb5_info->slice_iso8601_end     [this_slice]);
+                fprintf(stdout,"%-32s = %4.1f\n" , "rb5_info->slice_antspeed_deg_sec"   , rb5_info->slice_antspeed_deg_sec[this_slice]);
+                fprintf(stdout,"%-32s = %7.3f\n" , "rb5_info->slice_dur_secs_est"       , rb5_info->slice_dur_secs_est    [this_slice]);
+                fprintf(stdout,"%-32s = %7.3f\n" , "rb5_info->slice_dur_secs"           , rb5_info->slice_dur_secs        [this_slice]);
+                fprintf(stdout,"%-32s = %d\n"    , "rb5_info->L_TIME_ACCURACY_DOWNGRADE", rb5_info->L_TIME_ACCURACY_DOWNGRADE);
+            }
+        }
+
     } //for (this_slice = 0; this_slice < rb5_info->n_slices; this_slice++){
+
     if(L_VERBOSE){
         fprintf(stdout,"\n");
     }
 
-    return(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 
 }
 
@@ -877,8 +886,8 @@ strRB5_PARAM_INFO get_rb5_param_info(strRB5_INFO *rb5_info, char *xpath_bgn, int
     this_slice-=1; //decrement from string
     rb5_param.iray_0degN=rb5_info->iray_0degN[this_slice];
 
-    //iso8601 is in the parent <slicedata>
-    strcpy(rb5_param.iso8601,get_xpath_iso8601_attrib(xpathCtx,strcat(strcpy(xpath,xpath_bgn),"../")));
+    //iso8601 has been captured in parent rb5_info.slice_iso8601_bgn
+    strcpy(rb5_param.iso8601,rb5_info->slice_iso8601_bgn[this_slice]);
 
     if(strstr(xpath_bgn,"rawdata") != NULL) {
       //  ./get_xpath_val 2016090715102400dBZ.vol "((/volume/scan/slice)[1]/slicedata/rawdata)[1]/@type"
@@ -1114,22 +1123,29 @@ void reorder_by_iray_0degN(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr){
 
 //#############################################################################
 
-void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
+int get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
 
     static char iso8601_bgn[MAX_STRING]="\0";
     strcpy(iso8601_bgn,rb5_info->slice_iso8601_bgn[req_slice]);
-    static char iso8601_end[MAX_STRING]="\0";
+    static char iso8601_end    [MAX_STRING]="\0";
+    static char iso8601_end_est[MAX_STRING]="\0";
 
     char xpath_bgn[MAX_STRING]="\0";
 
     // how many seconds did the slice take to complete
     float n_elapsed_secs;
+    float n_elapsed_secs_est;
+
+    // estimate using slice antenna speed
+    float antspeed_deg_per_sec=rb5_info->slice_antspeed_deg_sec[req_slice];
+    float slice_span_deg=360.0-rb5_info->slice_ray_angle_res_deg[req_slice]; //open circle
+    n_elapsed_secs_est=slice_span_deg/antspeed_deg_per_sec;
 
     //if rayinfo <timestamp> exists, then extract and find largest elapsed n_secs
-    //else estimate from antenna rotation
     char req_rayinfo_name[MAX_STRING]="\0";
     strcpy(req_rayinfo_name,"timestamp");
     int idx_req=find_in_string_arr(rb5_info->rayinfo_name_arr,rb5_info->n_rayinfos,req_rayinfo_name);
+    size_t n_elems;
     if(idx_req != -1) {
 
       int L_RB5_PARAM_VERBOSE=0;
@@ -1138,7 +1154,10 @@ void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
 
       float *data_arr=NULL;
       void *raw_arr=NULL;
-      return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+      n_elems = return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+      if (n_elems == 0){
+          return EXIT_FAILURE;
+      }
       convert_raw_to_data(&rb5_param,&raw_arr,&data_arr);
     
       // determine maximum value in array
@@ -1157,24 +1176,22 @@ void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice) {
 
     } else { //if(idx_req == -1) {
       if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  n_elapsed_secs ESTIMATED from <antspeed>\n");
-      //antenna speed from <pargroup>
-      float antspeed_deg_per_sec=atof(return_xpath_value(rb5_info->xpathCtx,"/volume/scan/pargroup/antspeed"));
-      n_elapsed_secs=360./antspeed_deg_per_sec;
+      n_elapsed_secs=n_elapsed_secs_est;
     } //else
 
-    if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  n_elapsed_secs = %f\n",n_elapsed_secs);
-
-    rb5_info->slice_dur_secs[req_slice]=n_elapsed_secs;
-    strcpy(iso8601_end,func_add_nsecs_2_iso8601(iso8601_bgn,n_elapsed_secs));
-    strcpy(rb5_info->slice_iso8601_end[req_slice],iso8601_end);
-    if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  iso8601_bgn = %s\n",iso8601_bgn);
-    if(L_DEBUG_OUTPUT_1) fprintf(stdout,"  iso8601_end = %s\n",iso8601_end);
+    rb5_info->slice_dur_secs    [req_slice]=n_elapsed_secs;
+    rb5_info->slice_dur_secs_est[req_slice]=n_elapsed_secs_est;
+    strcpy(iso8601_end    ,func_add_nsecs_2_iso8601(iso8601_bgn,n_elapsed_secs    ));
+    strcpy(iso8601_end_est,func_add_nsecs_2_iso8601(iso8601_bgn,n_elapsed_secs_est));
+    strcpy(rb5_info->slice_iso8601_end    [req_slice],iso8601_end    );
+    strcpy(rb5_info->slice_iso8601_end_est[req_slice],iso8601_end_est);
+    return EXIT_SUCCESS;
     
 }
 
 //#############################################################################
 
-void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
+int get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
 
     char req_rayinfo_name[MAX_STRING]="\0";
     int idx_req=-1;
@@ -1201,12 +1218,16 @@ void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
     //moving_start_deg_arr
     strcpy(req_rayinfo_name,"startangle"); //mandatory
     idx_req=find_in_string_arr(rb5_info->rayinfo_name_arr,rb5_info->n_rayinfos,req_rayinfo_name);
+    size_t n_elems;
     if(idx_req == -1) {
         fprintf(stdout,"IMPOSSIBLE: %s not found\n", req_rayinfo_name);
     } else {
         sprintf(xpath_bgn,"((/volume/scan/slice)[%2d]/slicedata/%s)[%2d]/",req_slice+1,"rayinfo",idx_req+1);
         strRB5_PARAM_INFO rb5_param=get_rb5_param_info(rb5_info,xpath_bgn,L_RB5_PARAM_VERBOSE);
-        return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+        n_elems = return_param_blobid_raw(&(*rb5_info), &rb5_param, &raw_arr);
+        if (n_elems == 0){
+            return EXIT_FAILURE;
+        }
         convert_raw_to_data(&rb5_param,&raw_arr,&data_arr);
         for (i = 0; i < this_nrays; i++) {
             //handle RHI -'ve elevation angles as per RB5_FileFormat_5510.pdf, pg.48 "angle (ELE scan)"
@@ -1341,5 +1362,5 @@ void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice) {
 //               (rb5_info->slice_fixed_angle_arr[req_slice])[i]-=360.0;
 //        }
     }    
-
+    return EXIT_SUCCESS;
 }

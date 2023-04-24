@@ -62,9 +62,13 @@ typedef struct{
     char scan_type[MAX_STRING];
     char scan_name[MAX_STRING];
     size_t n_slices;
-    char slice_iso8601_bgn[MAX_STRING][MAX_SLICES];
-    char slice_iso8601_end[MAX_STRING][MAX_SLICES];
-    double slice_dur_secs[MAX_SLICES];
+    int L_TIME_ACCURACY_DOWNGRADE;
+    char slice_iso8601_bgn_low[MAX_STRING][MAX_SLICES];
+    char slice_iso8601_bgn    [MAX_STRING][MAX_SLICES];
+    char slice_iso8601_end_est[MAX_STRING][MAX_SLICES];
+    char slice_iso8601_end    [MAX_STRING][MAX_SLICES];
+    double slice_dur_secs_est[MAX_SLICES];
+    double slice_dur_secs    [MAX_SLICES];
     float angle_deg_arr[MAX_SLICES];
 
     float slice_nyquist_vel[MAX_SLICES];
@@ -151,7 +155,6 @@ typedef struct{
 // function declarations
 //#############################################################################
 size_t uncompress_this_blob(unsigned char *buf, unsigned char** return_uncompressed_blob, size_t compressed_size_blob);
-char *get_xpath_iso8601_attrib(const xmlXPathContextPtr xpathCtx, char *xpath_bgn);
 size_t get_blobid_buffer(strRB5_INFO *rb5_info, int req_blobid, unsigned char** return_uncompressed_blob);
 void convert_raw_to_data(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr, float **return_data_arr);
 size_t return_param_blobid_raw(strRB5_INFO *rb5_info, strRB5_PARAM_INFO* rb5_param, void **return_raw_arr);
@@ -166,5 +169,5 @@ size_t find_in_string_arr(char arr[][MAX_NSTRINGS], size_t n, char *match);
 void dump_strRB5_PARAM_INFO(strRB5_PARAM_INFO rb5_param);
 void get_slice_iray_0degN(strRB5_INFO *rb5_info, int req_slice);
 void reorder_by_iray_0degN(strRB5_PARAM_INFO *rb5_param, void **input_raw_arr);
-void get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice);
-void get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice);
+int get_slice_end_iso8601(strRB5_INFO *rb5_info, int req_slice);
+int get_slice_mid_angle_readbacks(strRB5_INFO *rb5_info, int req_slice);

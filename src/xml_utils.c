@@ -112,7 +112,14 @@ char *return_xpath_value(const xmlXPathContextPtr xpathCtx, char *xpath){
         return("\0");
     }
 //2020-Nov: xmlNodeGetContent function has checks for null pointers at cur, children, and content
-    char *value = (char *)xmlNodeGetContent(cur->children);
+    char *value = NULL;
+    xmlChar *ret_val = xmlNodeGetContent(cur->children);
+    if (ret_val)
+    {
+      value = (char *) cur->children->content;
+      xmlFree(ret_val); // xmlNodeGetContent() has a xmlStrdup, valgrind sees leaked lost memory (fix 2022-Aug)
+    }
+//    char *value = (char *)xmlNodeGetContent(cur->children);
 //    char *value = (char *) cur->children->content;
 //    fprintf(stdout,"debug XPATH: %s = %s\n", xpathExpr, value);
     /* Cleanup */

@@ -10,8 +10,7 @@
 # History:     2009-06-15 Created by Anders Henja
 #              2016-08-17 Modified by Daniel Michelson
 ############################################################
-SCRFILE=`python -c "import os;print os.path.abspath(\"$0\")"`
-SCRIPTPATH=`dirname "$SCRFILE"`
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 RES=255
 
