@@ -148,7 +148,7 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
     //#############################################################################//
     /* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
 
-    // HOW/RADAR_DATA
+    // HOW/DATA_FROM_INDIVIDUAL_RADARS
     if (strcmp(rb5_info->scan_type,"ele") == 0) { 
         ret = addDoubleAttribute(object, "how/elevspeed",rb5_info->slice_antspeed_rpm     [this_slice]);
     } else {
@@ -164,27 +164,28 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
     ret = addDoubleAttribute(object, "how/NI",           rb5_info->slice_nyquist_vel      [this_slice]);
     ret = addLongAttribute  (object, "how/Vsamples",     rb5_info->slice_num_samples      [this_slice]);
 
-//    ret = addDoubleAttribute(object, "how/nomTXpower",   ); // n/a
-//    ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
-//    ret = addDoubleAttribute(object, "how/powerdiff",    ); // n/a
-//    ret = addDoubleAttribute(object, "how/phasediff",    ); // sys_phidp
-
     // HOW/POLAR_DATA
     ret = addLongAttribute  (object, "how/scan_index",   this_slice+1);
-    ret = addLongAttribute  (object, "how/scan_count",   rb5_info->n_slices);
+    //ret = addLongAttribute  (object, "how/scan_count",   rb5_info->n_slices); //RAVE automagic
 
     // HOW/QUALITY
-    ret = addStringAttribute(object, "how/binmethod",    "AVERAGE");
+    ret = addDoubleAttribute(object, "how/SQI",          rb5_info->slice_sqi_threshold    [this_slice]);
+    ret = addDoubleAttribute(object, "how/CSR",          rb5_info->slice_csr_threshold    [this_slice]);
+    ret = addDoubleAttribute(object, "how/LOG",          rb5_info->slice_log_threshold    [this_slice]);
+
+    ret = addDoubleAttribute(object, "how/NEZH",         rb5_info->slice_noise_power_h    [this_slice]); //noise_power_dbz
+    ret = addDoubleAttribute(object, "how/base_1km_hc",  rb5_info->slice_noise_power_h    [this_slice]); //noise_power_dbz
+    ret = addDoubleAttribute(object, "how/NEZV",         rb5_info->slice_noise_power_v    [this_slice]); //noise_power_dbz_dpv
+    ret = addDoubleAttribute(object, "how/base_1km_vc",  rb5_info->slice_noise_power_v    [this_slice]); //noise_power_dbz_dpv
+
     if (strcmp(rb5_info->scan_type,"ele") == 0) { 
         ret = addStringAttribute(object, "how/elmethod",     "AVERAGE");
         ret = addStringAttribute(object, "how/anglesync",    "elevation");
-        ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
     } else {
-        ret = addDoubleAttribute(object, "how/astart",       0.0);  /* updated in setRayAttributes() */
         ret = addStringAttribute(object, "how/azmethod",     "AVERAGE");
         ret = addStringAttribute(object, "how/anglesync",    "azimuth");
-        ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
     }
+    ret = addDoubleAttribute(object, "how/anglesyncRes", rb5_info->slice_ray_angle_res_deg[this_slice]);
 
     /* Corrupt scans need to be caught */
     //Derive master fault flag from these attributes
@@ -216,25 +217,28 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         ret = addStringAttribute(object, "how/radar_msg", "No faults");
     }
 
-    ret = addDoubleAttribute(object, "how/NEZH",         rb5_info->slice_noise_power_h    [this_slice]);
-    ret = addDoubleAttribute(object, "how/NEZV",         rb5_info->slice_noise_power_v    [this_slice]);
+    // NOTE: attributes may not exist in the original RB5 raw file, thus check w/ strcmp(returned copied str,"") != 0
+    // WARNING: watch for value=atof(str(''))=0.0
 
-    ret = addStringAttribute(object, "how/clutterType", "GdrxCmOff"); //RB5 manual says "/volume/scan/slice[*]/gdrx_cluttermap" (not used)
-    ret = addStringAttribute(object, "how/clutterMap",  "Off"); // (not used)
+    ret = addStringAttribute(object, "how/binmethod",    "AVERAGE");
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/rangesamp"          )),"")) ret = addDoubleAttribute(object, "how/binmethod_avg", atof(tmp_a));
 
-// NOTE: these attributes may not exist in the original RB5 raw file, thus check
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalH"  , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"))          ,"")) ret = addDoubleAttribute(object, "how/zcalV"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrefindex"        )),"")) ret = addDoubleAttribute(object, "how/dielectic_factor", atof(tmp_a)); //custom extra
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrx_cluttermap"    )),"")) ret = addStringAttribute(object, "how/clutterType", tmp_a);
 
-//    ret = addDoubleAttribute(object, "how/nsampleH",    ); // n/a
-//    ret = addDoubleAttribute(object, "how/nsampleV",    ); // n/a
-    ret = addDoubleAttribute(object, "how/SQI",         rb5_info->slice_sqi_threshold    [this_slice]);
-    ret = addDoubleAttribute(object, "how/CSR",         rb5_info->slice_csr_threshold    [this_slice]);
-    ret = addDoubleAttribute(object, "how/LOG",         rb5_info->slice_log_threshold    [this_slice]);
-    ret = addStringAttribute(object, "how/VPRcorr",     "False");
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxmaxpowkw"       )),"")) ret = addDoubleAttribute(object, "how/nomTXpower", kW_2_dBm(atof(tmp_a))); //found only in v5.49; kW -> dBm
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdphtxcalpowkw"   )),"")) ret = addDoubleAttribute(object, "how/TXcalpowkwH", atof(tmp_a)); //custom extra
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxcalpowkw"  )),"")) ret = addDoubleAttribute(object, "how/TXcalpowkwV", atof(tmp_a)); //custom extra
 
-///*
-    // from <txpower> determine max & avg
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbphidpoffpw"      )),"")) ret = addDoubleAttribute(object, "how/phasediff", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbzdroffpw"        )),"")) ret = addDoubleAttribute(object, "how/zdrcal", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbsysgainoffset"   )),"")) ret = addDoubleAttribute(object, "how/zcalH", atof(tmp_a)); //dB
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvsysgainoffset")),"")) ret = addDoubleAttribute(object, "how/zcalV", atof(tmp_a)); //dB
+
+    // need H & V txpower
+    //ret = addDoubleAttribute(object, "how/powerdiff", atof(tmp_a)); //dB
+
+    // from <txpower> determine max & avg; <txpower> storage in setRayAttributes()
     L_RB5_PARAM_VERBOSE=0;
     char req_rayinfo_name[MAX_STRING]="\0";
     strcpy(req_rayinfo_name,"txpower");
@@ -262,8 +266,8 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         } //for (i = 0; i < rb5_param.n_elems_data; i++) {
         if(cnt_pwr > 0.0) avg_pwr=sum_pwr/cnt_pwr;
 
-        ret = addDoubleAttribute(object, "how/peakpwr",     data_arr[iray_peak_pwr]/1000.); //[kW]
-        ret = addDoubleAttribute(object, "how/avgpwr",      avg_pwr); //[W]
+        ret = addDoubleAttribute(object, "how/peakpwr", kW_2_dBm(data_arr[iray_peak_pwr]/1000.)); //ODIM_2_4 is now dBm
+        ret = addDoubleAttribute(object, "how/avgpwr",  kW_2_dBm(avg_pwr/1000.)); //ODIM_2_4 is now dBm
 
         if(is_rb5_param_dualpol(rb5_param.sparam)) {
             ret = addStringAttribute(object, "how/pol_of_txpower","dual");
@@ -274,13 +278,6 @@ int populateScan(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
         if (data_arr != NULL ) RAVE_FREE(data_arr);
     }
-//*/
-
-//    ret = addDoubleAttribute(object, "how/dynrange",    ); // n/a
-//    ret = addDoubleAttribute(object, "how/RAC",         ); // n/a
-//    ret = addStringAttribute(object, "how/BBC",         "False");
-//    ret = addDoubleAttribute(object, "how/PAC",         ); // n/a
-//    ret = addDoubleAttribute(object, "how/S2N",         ); // ?!?
 
     //#############################################################################//
     /* Set mandatory 'where' attributes, Table 4 in the ODIM_H5 spec. */
@@ -348,8 +345,8 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     //#############################################################################//
     /*  Top-level 'what' attributes, Table 1 of the ODIM_H5 spec. */
     
-    ret = addStringAttribute(object, "how/_creator_program", "rb52odim");
-    ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"Rainbow "),rb5_info->rainbow_version));
+    ret = addStringAttribute(object, "how/_creator_program",  strcat(strcpy(tmp_a,"RAVE module: rb52odim, compiled: "), __DATE__));
+    ret = addStringAttribute(object, "how/_orig_file_format", strcat(strcpy(tmp_a,"LEONARDO/SELEX Rainbow "),rb5_info->rainbow_version));
     ret = addStringAttribute(object, "how/_orig_sensor_id", rb5_info->sensor_id);
     ret = addStringAttribute(object, "how/_orig_sensor_name", rb5_info->sensor_name);
 
@@ -440,7 +437,7 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
       PolarVolume_setLatitude ((PolarVolume_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarVolume_setHeight   ((PolarVolume_t*)object,rb5_info->sensor_alt_m); //m_asl
       if(L_RAVE_PY3){
-        //rave-py3: _setBeamwidth() will populate beamwH attrib
+        //rave-py3: simple _setBeamwidth() will also populate beamwH attrib
         PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
         //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
         //rave-py3: new _setBeamwH/V() methods
@@ -450,9 +447,7 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
         if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
           PolarVolume_setBeamwV((PolarVolume_t*)object,atof(tmp_a)*DEG_TO_RAD);
         }
-      } else { //L_RAVE_PY3
-        PolarVolume_setBeamwidth((PolarVolume_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
-      } // L_RAVE_PY3
+      }
     } else {
       PolarScan_setDate     ((PolarScan_t*)object,func_iso8601_2_yyyymmdd(iso8601));
       PolarScan_setTime     ((PolarScan_t*)object,func_iso8601_2_hhmmss(iso8601));
@@ -461,7 +456,7 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
       PolarScan_setLatitude ((PolarScan_t*)object,rb5_info->sensor_lat_deg*DEG_TO_RAD);
       PolarScan_setHeight   ((PolarScan_t*)object,rb5_info->sensor_alt_m); //m_asl
       if(L_RAVE_PY3){
-        //rave-py3: _setBeamwidth() will populate beamwH attrib
+        //rave-py3: simple _setBeamwidth() will also populate beamwH attrib
         PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
         //older Rainbow files may not have the /spb{hor/ver}beam slice attrib
         if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam")),"")){
@@ -470,15 +465,13 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
         if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam")),"")){
           PolarScan_setBeamwV((PolarScan_t*)object,atof(tmp_a)*DEG_TO_RAD);
         }
-      } else { //L_RAVE_PY3
-        PolarScan_setBeamwidth((PolarScan_t*)object,rb5_info->sensor_beamwidth_deg*DEG_TO_RAD);
-      } // L_RAVE_PY3
+      }
     }
 
     //#############################################################################//
     /* Set optional 'how' attributes. There are lots! See Table 8 in the ODIM_H5 spec. */
 
-    sprintf(tmp_a,"%s%s",
+    sprintf(tmp_a,"%s %s",
         return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/make")),
         return_xpath_value(radar_table.xpathCtx,strcat(strcpy(xpath,xpath_bgn),"/model"))
         );
@@ -499,39 +492,39 @@ int populateObject(RaveCoreObject* object, strRB5_INFO *rb5_info) {
     else strcpy(tmp_a,"unmapped");
     if(strcmp(tmp_a,"unmapped") != 0) ret = addStringAttribute(object, "how/polmode", tmp_a);
 
+    // HOW/GENERAL
     ret = addStringAttribute(object, "how/task", rb5_info->scan_name); //"The RB5 task name");
     ret = addStringAttribute(object, "how/software", "RAINBOW"); //According to Table 11
     ret = addStringAttribute(object, "how/sw_version", rb5_info->rainbow_version); //"major.minor.veryminor");
     ret = addStringAttribute(object, "how/simulated", "False");
     ret = addDoubleAttribute(object, "how/wavelength", rb5_info->sensor_wavelength_cm);
-//    ret = addDoubleAttribute(object, "how/RXbandwidth", ); // n/a
 
     close_xml_buffer(&radar_table);
     
-// as per Issue #23, found in <slice refid="0">
-// NOTE: these attributes may not exist in the original RB5 raw file, thus check
-//ERROR: creates an attrib with value=str('')=0.0  if(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/foobar"))          ,"")) ret = addDoubleAttribute(object, "how/my_foobar"  , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq")),"")) ret = addDoubleAttribute(object, "how/RXfrequency", atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"))       ,"")) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"))    ,"")) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
-//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
-//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"))       ,"")) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"))    ,"")) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"))    ,"")) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)); //copying Horz
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"))      ,"")) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
-    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"))   ,"")) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
-    if(L_RAVE_PY3){
-        //rave-py3:  for beamwH/V, these 2 generic attribs now part of Polar{Volume/Scan} struct (see above for method() use)
-    } else { //L_RAVE_PY3
-        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwH"     , atof(tmp_a));
-        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"))      ,"")) ret = addDoubleAttribute(object, "how/beamwV"     , atof(tmp_a));
-    } //L_RAVE_PY3
-//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
+    // NOTE: attributes may not exist in the original RB5 raw file, thus check w/ strcmp(returned copied str,"") != 0
+    // WARNING: watch for value=atof(str(''))=0.0
 
-    // NOTE, rest set at SCAN level: rpm, prf's pw, Nyquist, noise_power_dbz, nsamples
+    // HOW/DATA_FROM_INDIVIDUAL_RADARS
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/gdrxtransmitfreq")),"")) ret = addDoubleAttribute(object, "how/frequency"  , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbmaxbandwidth" )),"")) ret = addDoubleAttribute(object, "how/RXbandwidth", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbantgain"      )),"")) ret = addDoubleAttribute(object, "how/antgainH"   , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvantgain"   )),"")) ret = addDoubleAttribute(object, "how/antgainV"   , atof(tmp_a));
+    if(L_RAVE_PY3){
+        //rave-py3:  for beamwH/V, these 2 generic attribs now part of Polar{Volume/Scan} struct (see above for _setBeamwidthH/V() method)
+    } else { //L_RAVE_PY3
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbhorbeam"  )),"")) ret = addDoubleAttribute(object, "how/beamwH" , atof(tmp_a));
+        if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbverbeam"  )),"")) ret = addDoubleAttribute(object, "how/beamwV" , atof(tmp_a));
+    } //L_RAVE_PY3
+
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,))                   ,"")) ret = addDoubleAttribute(object, "how/gasattn"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbtxloss"       )),"")) ret = addDoubleAttribute(object, "how/TXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvtxloss"    )),"")) ret = addDoubleAttribute(object, "how/TXlossV"    , atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/XXX"             )),"")) ret = addDoubleAttribute(object, "how/injectlossH", atof(tmp_a));
+//  if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/XXX"             )),"")) ret = addDoubleAttribute(object, "how/injectlossV", atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbrxloss"       )),"")) ret = addDoubleAttribute(object, "how/RXlossH"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbdpvrxloss"    )),"")) ret = addDoubleAttribute(object, "how/RXlossV"    , atof(tmp_a));
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"    )),"")) ret = addDoubleAttribute(object, "how/radomelossH", atof(tmp_a)*0.5); //two- to one-way loss
+    if(strcmp(strcpy(tmp_a,get_xpath_slice_attrib(rb5_info->xpathCtx,0,"/spbradomloss"    )),"")) ret = addDoubleAttribute(object, "how/radomelossV", atof(tmp_a)*0.5); //two- to one-way loss; copying H
 
 if(L_RB52ODIM_DEBUG) fprintf(stdout,"Done top-level 'how' attributes...\n");
 
@@ -829,6 +822,7 @@ int setRayAttributes(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         RaveAttribute_t* el_attr2 = RaveAttributeHelp_createDoubleArray("how/stopelA", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, el_attr2);
         RAVE_OBJECT_RELEASE(el_attr2);
+
         for(i=0;i<this_nrays;i++) ddata_arr[i]=(rb5_info->slice_fixed_angle_arr[this_slice])[i];
         RaveAttribute_t* az_attr = RaveAttributeHelp_createDoubleArray("how/azangles", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, az_attr);
@@ -850,14 +844,12 @@ int setRayAttributes(PolarScan_t* scan, strRB5_INFO *rb5_info, int this_slice) {
         RaveAttribute_t* az_attr1 = RaveAttributeHelp_createDoubleArray("how/startazA", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, az_attr1);
         RAVE_OBJECT_RELEASE(az_attr1);
-        //update "how/astart" with "how/astart" first (lowest) value in "how/startazA"
-        //h5dump --attribute=/dataset1/how/astart dummy.h5
-        ret = addDoubleAttribute((RaveCoreObject*)scan, "how/astart", ddata_arr[0]);
-
+        ret = addDoubleAttribute((RaveCoreObject*)scan, "how/astart", ddata_arr[0]); // first (lowest) value in "how/startazA"
         for(i=0;i<this_nrays;i++) ddata_arr[i]=(rb5_info->slice_moving_angle_stop_arr[this_slice])[i];
         RaveAttribute_t* az_attr2 = RaveAttributeHelp_createDoubleArray("how/stopazA", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, az_attr2);
         RAVE_OBJECT_RELEASE(az_attr2);
+
         for(i=0;i<this_nrays;i++) ddata_arr[i]=(rb5_info->slice_fixed_angle_arr[this_slice])[i];
         RaveAttribute_t* el_attr = RaveAttributeHelp_createDoubleArray("how/elangles", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, el_attr);
@@ -888,7 +880,7 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Adding rayinfo = %s to scan...\n",rb5_param
       if(strcmp(rb5_param.sparam,"dataflag") == 0){
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
 if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
-        RaveAttribute_t* dataflag_attr = RaveAttributeHelp_createLongArray("how/dataflag", ldata_arr, this_nrays);
+        RaveAttribute_t* dataflag_attr = RaveAttributeHelp_createLongArray("how/dataflag", ldata_arr, this_nrays); //custom extra
         ret = PolarScan_addAttribute(scan, dataflag_attr);
         RAVE_OBJECT_RELEASE(dataflag_attr);
         // add comment about dataflag bit encoding
@@ -913,11 +905,13 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
             "  0x4000 = not used\n"
             "  0x8000 = not used\n"
             "<noisepowerh>, <noisepowerv> range corrected noise power at 1 km range [dBZ]");
+
       }else if(strcmp(rb5_param.sparam,"numpulses") == 0){
         for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
-        RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays);
+        RaveAttribute_t* numpulses_attr = RaveAttributeHelp_createLongArray("how/numpulses", ldata_arr, this_nrays); //custom extra
         ret = PolarScan_addAttribute(scan, numpulses_attr);
         RAVE_OBJECT_RELEASE(numpulses_attr);
+
       }else if(strcmp(rb5_param.sparam,"timestamp") == 0){ //EPOCH SECONDS
         if (rb5_info->L_TIME_ACCURACY_DOWNGRADE){ //populate using estimated elapsed ms
             double ms_dur_per_ray=(double)rb5_info->slice_dur_secs_est[this_slice]/(double)(this_nrays-1)*1000.;
@@ -928,30 +922,36 @@ if(L_RB52ODIM_DEBUG) fprintf(stdout,"Creating how/dataflag...\n");
         RaveAttribute_t* startazT_attr = RaveAttributeHelp_createDoubleArray("how/startazT", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, startazT_attr);
         RAVE_OBJECT_RELEASE(startazT_attr);
+
       }else if(strcmp(rb5_param.sparam,"txpower") == 0){ //KILOWATTS
-        for (i=0;i<this_nrays;i++) ddata_arr[i]=(double)data_arr[i]/1000.;
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=kW_2_dBm((double)data_arr[i]/1000.); //ODIM_2_4 is now dBm
         RaveAttribute_t* txpower_attr = RaveAttributeHelp_createDoubleArray("how/TXpower", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, txpower_attr);
         RAVE_OBJECT_RELEASE(txpower_attr);
+
+      //2023-Apr: to use NEZ(H/V)_A (array) instead of custom "noisepower(h/v)"
       }else if(strcmp(rb5_param.sparam,"noisepowerh") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
 //        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
 //        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createLongArray("how/noisepowerh", ldata_arr, this_nrays);
         //convert IEEE 754 "single format" bit layout to 32 bit floating-point
         float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
-        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
-        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerh", ddata_arr, this_nrays);
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now noise power at 1 km range
+        RaveAttribute_t* noisepowerh_attr = RaveAttributeHelp_createDoubleArray("how/NEZH_A", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerh_attr);
         RAVE_OBJECT_RELEASE(noisepowerh_attr);
+
       }else if(strcmp(rb5_param.sparam,"noisepowerv") == 0){ //added in v5.44.0, noise power at 100 km range in dBZ
 //        for (i=0;i<this_nrays;i++) ldata_arr[i]=data_arr[i];
 //        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createLongArray("how/noisepowerv", ldata_arr, this_nrays);
         //convert IEEE 754 "single format" bit layout to 32 bit floating-point
         float rc_factor=-20.*log10(100./1.); //range correction from 100 to 1 km
-        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now at noise power at 1 km range
-        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createDoubleArray("how/noisepowerv", ddata_arr, this_nrays);
+        for (i=0;i<this_nrays;i++) ddata_arr[i]=((union {uint32_t u32; float f32;}){data_arr[i]}).f32+rc_factor; //now noise power at 1 km range
+        RaveAttribute_t* noisepowerv_attr = RaveAttributeHelp_createDoubleArray("how/NEZV_A", ddata_arr, this_nrays);
         ret = PolarScan_addAttribute(scan, noisepowerv_attr);
         RAVE_OBJECT_RELEASE(noisepowerv_attr);
       }
+
+      // gdrxphidp radial readback... TBD?
 
       if ( raw_arr != NULL ) RAVE_FREE( raw_arr);
       if (data_arr != NULL ) RAVE_FREE(data_arr);

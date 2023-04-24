@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table ver="2.0" author="Peter Rodriguez" updated="2023-04-17">
+<!-- Manual pass and resorting by cwrrp_order using,
+https://ecollab.ncr.int.ec.gc.ca/projects/MDS/portfolio/CWRRP/Lists/DeploymentSchedule/Public.aspx
+    cwrrp_order
+    site_name (locale)
+    sat_bgn_date
+CWRRP_NRP_Site_Parameter_master_list.xlsx: Rev 2023-03-23, master sheet only
+    area_served
+    rf_lic_freq_mhz (approx?)
+    rf_lic_call_sign
+-->
+    <radar order="1" id="CASRA" bgn_date="2017-12-07" end_date="">
+        <label>S-band at Radisson, SK (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casra</odim_node>
+        <locale>Radisson</locale>
+        <admin_state>SK</admin_state>
+        <country>Canada</country>
+        <area_served>Saskatoon / North Battleford</area_served>
+        <rf_lic_freq_mhz>2820</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFR573</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="2" id="CASBV" bgn_date="2018-08-07" end_date="">
+        <label>S-band at Blainville, QC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casbv</odim_node>
+        <locale>Blainville</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served>Montreal</area_served>
+        <rf_lic_freq_mhz>2820</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ438</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="3" id="CASFW" bgn_date="2018-10-26" end_date="">
+        <label>S-band at Foxwarren, MB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casfw</odim_node>
+        <locale>Foxwarren</locale>
+        <admin_state>MB</admin_state>
+        <country>Canada</country>
+        <area_served>Eastern Sask. / Western Manitoba</area_served>
+        <rf_lic_freq_mhz>2840</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ833</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="4" id="CASRF" bgn_date="2018-10-30" end_date="">
+        <label>S-band at Smooth Rock Falls, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casrf</odim_node>
+        <locale>Smooth Rock Falls</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Northeastern Ontario</area_served>
+        <rf_lic_freq_mhz>2825</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CGE200</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="5" id="CASSR" bgn_date="2019-03-22" end_date="">
+        <label>S-band at Spirit River, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cassr</odim_node>
+        <locale>Spirit River</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Grand Prairie</area_served>
+        <rf_lic_freq_mhz>2820</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ838</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="6" id="CASET" bgn_date="2019-11-15" end_date="">
+        <label>S-band at Exeter, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>caset</odim_node>
+        <locale>Exeter</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>South Western Ontario</area_served>
+        <rf_lic_freq_mhz>2738</rf_lic_freq_mhz>
+        <rf_lic_call_sign>VAU281</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="7" id="CASBE" bgn_date="2019-09-13" end_date="">
+        <label>S-band at Bethune, SK (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casbe</odim_node>
+        <locale>Bethune</locale>
+        <admin_state>SK</admin_state>
+        <country>Canada</country>
+        <area_served>Regina / Moose Jaw</area_served>
+        <rf_lic_freq_mhz>2808</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFZ399</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="8" id="CASMB" bgn_date="2019-10-18" end_date="">
+        <label>S-band at Marion Bridge, NS (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casmb</odim_node>
+        <locale>Marion Bridge</locale>
+        <admin_state>NS</admin_state>
+        <country>Canada</country>
+        <area_served>Cape Breton</area_served>
+        <rf_lic_freq_mhz>2840</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFY920</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="9" id="CASCM" bgn_date="2019-10-04" end_date="">
+        <label>S-band at Chipman, NB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cascm</odim_node>
+        <locale>Chipman</locale>
+        <admin_state>NB</admin_state>
+        <country>Canada</country>
+        <area_served>Fredericton</area_served>
+        <rf_lic_freq_mhz>2850</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ959</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="10" id="CASLA" bgn_date="2019-10-25" end_date="">
+        <label>S-band at Landrienne, QC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casla</odim_node>
+        <locale>Landrienne</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served>Val d'Or</area_served>
+        <rf_lic_freq_mhz>2835</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFK764</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="11" id="CASMR" bgn_date="2019-11-22" end_date="">
+        <label>S-band at Montreal River Harbour, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casmr</odim_node>
+        <locale>Montreal River Harbour</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Superior East</area_served>
+        <rf_lic_freq_mhz>2813</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFY921</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="12" id="CASSM" bgn_date="2019-11-15" end_date="">
+        <label>S-band at Strathmore, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cassm</odim_node>
+        <locale>Strathmore</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Calgary</area_served>
+        <rf_lic_freq_mhz>2803</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFI934</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="13" id="CASSU" bgn_date="2020-08-24" end_date="">
+        <label>S-band at Schuler, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cassu</odim_node>
+        <locale>Schuler</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Medicine Hat</area_served>
+        <rf_lic_freq_mhz>2845</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ399</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="14" id="CASDR" bgn_date="2020-09-03" end_date="">
+        <label>S-band at Dryden, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casdr</odim_node>
+        <locale>Dryden</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>North Western Ontario</area_served>
+        <rf_lic_freq_mhz>2840</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ932</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="15" id="CASHR" bgn_date="2010-10-09" end_date="">
+        <label>S-band at Holyrood, NL (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cashr</odim_node>
+        <locale>Holyrood</locale>
+        <admin_state>NL</admin_state>
+        <country>Canada</country>
+        <area_served>Eastern Newfoundland and Labrador</area_served>
+        <rf_lic_freq_mhz>2840</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ930</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="16" id="CASSF" bgn_date="2020-11-02" end_date="">
+        <label>S-band at Ste Francoise, QC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cassf</odim_node>
+        <locale>Ste Francoise</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served>Quebec City</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="17" id="CASTS" bgn_date="2020-11-16" end_date="">
+        <label>S-band at Egbert, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casts</odim_node>
+        <locale>Egbert</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Training site</area_served>
+        <rf_lic_freq_mhz>2835</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ958</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="18" id="CASWL" bgn_date="2020-10-12" end_date="">
+        <label>S-band at Woodlands, MB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>caswl</odim_node>
+        <locale>Woodlands</locale>
+        <admin_state>MB</admin_state>
+        <country>Canada</country>
+        <area_served>Winnipeg</area_served>
+        <rf_lic_freq_mhz>2850</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ383</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="19" id="CASVD" bgn_date="2020-10-30" end_date="">
+        <label>S-band at Val d'Irene, QC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casvd</odim_node>
+        <locale>Val d'Irene</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served>Lower St. Lawrence</area_served>
+        <rf_lic_freq_mhz>2805</rf_lic_freq_mhz>
+        <rf_lic_call_sign>VET653</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="20" id="CASKR" bgn_date="2021-06-21" end_date="">
+        <label>S-band at King City, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>caskr</odim_node>
+        <locale>King City</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Southern Ontario</area_served>
+        <rf_lic_freq_mhz>2750</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ933</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="21" id="CASFT" bgn_date="2021-07-26" end_date="">
+        <label>S-band at Franktown, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casft</odim_node>
+        <locale>Franktown</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Eastern Ontario</area_served>
+        <rf_lic_freq_mhz>2740</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ931</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="22" id="CASGO" bgn_date="2021-09-27" end_date="">
+        <label>S-band at Gore, NS (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casgo</odim_node>
+        <locale>Gore</locale>
+        <admin_state>NS</admin_state>
+        <country>Canada</country>
+        <area_served>Halifax</area_served>
+        <rf_lic_freq_mhz>2705</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ934</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="23" id="CASBI" bgn_date="2021-12-06" end_date="">
+        <label>S-band at Britt, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casbi</odim_node>
+        <locale>Britt</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Georgian Bay</area_served>
+        <rf_lic_freq_mhz>2845</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ957</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="24" id="CASAG" bgn_date="2021-10-04" end_date="">
+        <label>S-band at Aldergrove, BC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casag</odim_node>
+        <locale>Aldergrove</locale>
+        <admin_state>BC</admin_state>
+        <country>Canada</country>
+        <area_served>Vancouver</area_served>
+        <rf_lic_freq_mhz>2848</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFQ599</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="25" id="CASCL" bgn_date="2021-10-18" end_date="">
+        <label>S-band at Cold Lake, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cascl</odim_node>
+        <locale>Cold Lake</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>NW Saskatchewan / NE Alberta</area_served>
+        <rf_lic_freq_mhz>2735</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ441</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="26" id="CASCV" bgn_date="2022-01-17" end_date="">
+        <label>S-band at Carvel, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cascv</odim_node>
+        <locale>Carvel</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Edmonton</area_served>
+        <rf_lic_freq_mhz>2835</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ400</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="27" id="CASMM" bgn_date="2022-10-24" end_date="">
+        <label>S-band at Marble Mountain, NL (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casmm</odim_node>
+        <locale>Marble Mountain</locale>
+        <admin_state>NL</admin_state>
+        <country>Canada</country>
+        <area_served>Western Newfoundland and Labrador</area_served>
+        <rf_lic_freq_mhz>2850</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ929</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="28" id="CASSN" bgn_date="2023-07-03" end_date="">
+        <label>S-band at Shuniah, ON (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cassn</odim_node>
+        <locale>Shuniah</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served>Superior West</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="29" id="CASSS" bgn_date="2022-12-05" end_date="">
+        <label>S-band at Silver Star Mountain, BC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casss</odim_node>
+        <locale>Silver Star Mountain</locale>
+        <admin_state>BC</admin_state>
+        <country>Canada</country>
+        <area_served>Southern Interior B.C.</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="30" id="CASMA" bgn_date="2023-01-23" end_date="">
+        <label>S-band at Mt Apica, QC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casma</odim_node>
+        <locale>Mt Apica</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served>Saguenay</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="31" id="CASFM" bgn_date="2022-09-19" end_date="">
+        <label>S-band at Fort McMurray, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>casfm</odim_node>
+        <locale>Fort McMurray</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Lower Athabasca</area_served>
+        <rf_lic_freq_mhz>2825</rf_lic_freq_mhz>
+        <rf_lic_call_sign>CFJ396</rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="32" id="CASPG" bgn_date="2022-12-12" end_date="">
+        <label>S-band at Prince George, BC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>caspg</odim_node>
+        <locale>Prince George</locale>
+        <admin_state>BC</admin_state>
+        <country>Canada</country>
+        <area_served>Central Interior B.C.</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar order="33" id="CASHP" bgn_date="2023-08-07" end_date="">
+        <label>S-band at Halfmoon Peak, BC (NRP)</label>
+        <operator>NRP</operator>
+        <band>S</band>
+        <odim_node>cashp</odim_node>
+        <locale>Halfmoon Peak</locale>
+        <admin_state>BC</admin_state>
+        <country>Canada</country>
+        <area_served>Victoria, Northern Strait of Georgia, BC</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>1700S</model>
+        <serial></serial>
+        <txtype>klystron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+<!-- CWRRP X-band backfill according to magni.king.ec.gc.ca:/RADAR/CAX?? -->
+    <radar id="CAXAR" bgn_date="2019-08-22" end_date="2020-05-27">
+        <label>X-band at AirdrieRodeo, AB (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxar</odim_node>
+        <locale>AirdrieRodeo</locale>
+        <admin_state>AB</admin_state>
+        <country>Canada</country>
+        <area_served>Calgary</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magnetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar id="CAXAV" bgn_date="2020-06-04" end_date="2020-12-14">
+        <label>X-band at StAndrewAirport, MB (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxav</odim_node>
+        <locale>StAndrewAirport</locale>
+        <admin_state>MB</admin_state>
+        <country>Canada</country>
+        <area_served>Winnipeg</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magnetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar id="CAXBE" bgn_date="2019-04-10" end_date="2019-08-13">
+        <label>X-band at BrattsLake, SK (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxbe</odim_node>
+        <locale>BrattsLake</locale>
+        <admin_state>SK</admin_state>
+        <country>Canada</country>
+        <area_served>Regina</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magnetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar id="CAXFW" bgn_date="2018-04-04" end_date="2019-04-08">
+        <label>X-band at Foxwarren, MB (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxfw</odim_node>
+        <locale>Foxwarren</locale>
+        <admin_state>MB</admin_state>
+        <country>Canada</country>
+        <area_served>Manitoba / Saskatchewan border</area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magnetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+<!-- Merged : odim_radar_table.STB_research_Xbands.xml -->
+    <radar id="CAXWH" bgn_date="2017-12-13" end_date="2019-11-28">
+        <label>CAX3 at Whitehorse (STB)</label>
+        <operator>OBRS</operator>
+        <band>X</band>
+        <odim_node>caxwh</odim_node>
+        <locale>Whitehorse</locale>
+        <admin_state>YT</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar id="YXY" bgn_date="2016-12-17" end_date="2017-08-30">
+        <label>CAX1 at Whitehorse (STB)</label>
+        <operator>OBRS</operator>
+        <band>X</band>
+        <odim_node>caxwh</odim_node>
+        <locale>Whitehorse</locale>
+        <admin_state>YT</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment>Moved from Albert Head, BC. Returned to King Radar</comment>
+    </radar>
+    <radar id="XBV" bgn_date="2017-08-10" end_date="2018-04-01">
+        <label>CAX2 at Blainville (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxbv</odim_node>
+        <locale>Blainville</locale>
+        <admin_state>QC</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment>Moved from Exeter, ON</comment>
+    </radar>
+    <radar id="XSO" bgn_date="2016-08-15" end_date="2017-05-21">
+        <label>CAX2 at Exeter (NRP)</label>
+        <operator>NRP</operator>
+        <band>X</band>
+        <odim_node>caxso</odim_node>
+        <locale>Exeter</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+    <radar id="XAH" bgn_date="2015-11-13" end_date="2016-05-09">
+        <label>CAX1 at Olympex (STB)</label>
+        <operator>OBRS</operator>
+        <band>X</band>
+        <odim_node>caxah</odim_node>
+        <locale>Albert Head</locale>
+        <admin_state>BC</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment>Originally XKR, changed to XAH in Keepers by PR</comment>
+    </radar>
+    <radar id="XKR" bgn_date="2015-10-16" end_date="2015-10-21">
+        <label>CAX1 at King Radar (STB)</label>
+        <operator>OBRS</operator>
+        <band>X</band>
+        <odim_node>caxkr</odim_node>
+        <locale>King City</locale>
+        <admin_state>ON</admin_state>
+        <country>Canada</country>
+        <area_served></area_served>
+        <rf_lic_freq_mhz></rf_lic_freq_mhz>
+        <rf_lic_call_sign></rf_lic_call_sign>
+        <make>Leonardo/SELEX</make>
+        <model>60DX</model>
+        <serial></serial>
+        <txtype>magetron</txtype>
+        <poltype>simultaneous-dual</poltype>
+        <comment></comment>
+    </radar>
+</table>
+<!-- END XML -->

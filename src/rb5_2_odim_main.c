@@ -30,6 +30,9 @@ along with RAVE.  If not, see <http://www.gnu.org/licenses/>.
  *   valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/2016092614304000dBZ.vol -o dummy.vol.h5
  *   valgrind --leak-check=full --show-reachable=yes ./rb5_2_odim -i ../test/org/CASSR_2023020717120300dBZ.vol.gz -o dummy.h5 //bad datetimehighaccuracy issue on iSLICE (base-0) = 7,8,9,10
  *
+ * Example:
+ * ./rb5_2_odim -i ../test/org/CASRA_2017121520000300dBZ.vol.gz -o CASRA_20171215200003_dBZ.test.h5
+ * h5dump --attribute=/dataset1/how/astart CASRA_20171215200003_dBZ.test.h5
  */
 
 //#include "rave_debug.h"
